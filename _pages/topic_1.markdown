@@ -6,8 +6,6 @@ category: Jekyll
 layout: post
 ---
 
-
-
 ## Bioinformatics for evolutionary biologists
 
 *We have tried to keep jargon to a minimum, but if there are things that you want us to clarify or terms you want us to define please don't be afraid to ask!*
