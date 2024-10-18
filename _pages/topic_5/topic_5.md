@@ -1,8 +1,9 @@
 ---
 title: "Topic 5: Sequence Alignment"
-permalink: /Topic_5/
-topickey: 5
-topictitle: "Sequence Alignment"
+author: Tom Booker
+date: 2024-10-16
+category: Jekyll
+layout: post
 ---
 
 ### Accompanying material

@@ -1,11 +1,12 @@
 ---
-title: "Topic 3: Bioinformatics Gotchyas"
-permalink: /Topic_3/
-topickey: 3
-topictitle: "Bioinformatic Gotchyas"
+title: "Topic 3 - Sequence Data"
+author: Tom Booker
+date: 2024-10-16
+category: Jekyll
+layout: post
 ---
 
-## Accompanying material
+### Accompanying material
 [Lecture Slides](./Topic_3.pdf)
 
 # Part 1: Overview of sequence data
@@ -27,7 +28,7 @@ A "tarball" is a way of compressing an entire directory full of files so that yo
 * ``f``, this tells the program that you are specifying the tar-ball as a file on the command line
 
 
-## Checking data integrity
+### Checking data integrity
 
 Often when downloading large files, we want to perform a check on the integrity of the data downloaded. Perhaps you were downloading a large file and the power went down before you were not able to check the data. More generally, when downloading many large files you may not have the time (or the patience) to manually curate each one to ensure that it was downloaded correctly.
 
@@ -37,7 +38,8 @@ The data that you obtained for Topic 1 also contained a file called ```SalmonDat
 
 Store your checksums with your data, where ever you host it.
 
-Navigate to the location of the data and check that the downloaded data actually match those that were sent by the  
+Navigate to the location of the data and check that the downloaded data actually match those that were sent by the sequencing centre...
+
 ```
 cd Tutorial_3_data
 shasum -c SalmonData_checksums.sha
@@ -62,7 +64,8 @@ cd ../
 
 Great, that's nice and tidy now.
 
-## How many reads do we have?
+
+# Exercise 1
 
 A question that might be on top of mind would be, how many reads are we working with?
 
@@ -70,8 +73,9 @@ Can you use command line tools to get a count of the number of reads that we hav
 
 *Hint, remember the structure of a fastq file*
 
+Once you've done that, take a look at the contents of each file. How are paired-end reads identified? What information is used to identify read mates?
 
-## Inspect read quality
+# Part 2: Read Quality
 
 ### Install fastqc
 
@@ -156,7 +160,7 @@ Since we are using simulated data, our data does not have adapters. But taking a
 
 
 
-# Part 2: Convert a GFF file to BED format
+# Exercise 2: Convert a GFF file to BED format
 
 A routine task in bioinformatics is to convert files from one form to another. In this exercise we'll use the Unix command line to take a file from one format and make the necessary changes to put it in another.
 

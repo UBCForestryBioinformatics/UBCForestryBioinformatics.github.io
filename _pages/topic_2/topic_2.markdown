@@ -22,7 +22,7 @@ We have tried to focus on concepts rather than particular software packages in t
 * [Slides](./Topic_2.pdf)
 * [Software Carpentry Tutorial](http://swcarpentry.github.io/shell-novice/)
 
-# Part 0: Logging on to the servers:
+# Part 0 - Logging on to the servers:
 
 We have set up virtual machines (VM) for the workshop. You should have received an email about the particular VM you'll be using. To access the VMs we'll use a command line program called "Secure Shell" (```ssh```).
 
@@ -49,17 +49,17 @@ ssh my_user_name@123.456.789
 ```
 When you hit enter, you'll be asked to enter your password. Note that when you do that you will not see any text appear as you write - this is a security feature of ```ssh```.
 
-# Part 1: Interface:
+# Part 1 - Interface:
 
 
-## 1.1 Prompt or command line
+## 1.1 - Prompt or command line
 
 You should see a blinking cursor and a screen that looks something like this:
 ![Image](/pages/topic_2_pics/commandLine.png)
 
 The white text is mostly a welcome screen that lets you know the status of the machine you've just logged in to. For the purposes of this tutorial ignore this text.
 
-## 1.2 Output
+## 1.2 - Output
 
 ### Cowsay
 
@@ -73,7 +73,7 @@ This should have printed a picture of a happy little cow to your screen. ```cows
 
 The cow picture is an ASCII image, which means that it is text characters arranged to make a picture. The ASCII cow is the ```STDOUT``` from the ```cowsay``` program.
 
-## 1.3 Arguments
+## 1.3 - Arguments
 
 Command line programs offer their users lots of control that may not be as easily accessed when using a GUI. The ```cowsay``` program has lots of options for changing the appearance of our little bovine friend.
 
@@ -134,7 +134,7 @@ Some of these are really simple, but are crucially important for being able to n
 
 
 
-### Getting help
+### - Getting help
 
 most programs come with a manual page, explaining all options. You can get help about individual command with the following:
 
@@ -151,7 +151,7 @@ Programs like `man` and `less` show an on-screen navigation system:
  - <kbd>q</kbd> *q*uits.
 
 
-## 2 Interface: STDIO
+## 2 - Interface: STDIO
 
 There are three data streams that programs have access to in UNIX like systems. Remember, everything is a file, so we can work with each element as we see fit.
 
@@ -305,7 +305,7 @@ What this command does is list all files whose names start with "n".
 There are numerous metacharacters ([here's a comprehensive list](http://faculty.salina.k-state.edu/tim/unix_sg/shell/metachar.html)). It's a good idea to familiarize yourself with some of the more commonly used ones.
 
 
-## Paths
+### Paths
 
 As mentioned in the lecture, getting used to navigating the file hierarchy in Unix is probably one of the most important skills to develop. Knowing how to access data stored in locations other than your home directory is, as you can imagine, pretty important.
 
@@ -398,9 +398,40 @@ cat /home/booker/my_scripts/myCmd.sh # The absolute path to the 'myCmd.sh' file
 * `../` the parent directory
 
 
+### <a name="copying-files"></a> Reference: Copying files between servers (or between your computer and the server)
+
+   You can use `cp` to copy files from and to the same computer. To
+   copy across computers, you have to rely on networking tools. We
+   have collected information on copying files into [Copying across
+   machines](./copying_across_machines).
+
+### *sed*
+
+*Stream editor*. It parses and transforms text using regular expressions. Very powerful, but most easily used to reformat files based on patterns.\
+**Examples**:
+* Replace all instances of "1" with "one".
+  * `seq 10 | sed s/1/one/g`
+* Replace lines that only have "1" with "one".
+    * `seq 10 | sed s/^1$/one/g`
+* Print lines 3 through 5.
+    * `seq 1 10 41 | sed -n 3,5p`
+
+### *grep*
+*Search using regular expression (regex)*. This command searches for patterns and prints lines that match your pattern.\
+**Examples**:
+* Print all lines with "1".
+    * `seq 10 | grep 1`
+* Print all lines without "1".
+    * `seq 10 | grep -v 1`
+* Print all lines with "1" and "0"
+    * `seq 10 | grep 1 | grep 0`
+* Print all lines with "1" or "2"
+    * `seq 10 | grep "1\|2"`
+
+
 ______________________
 
-## Executable files and permissions
+### Executable files and permissions
 
 The little file we named `myCmd.sh` is actually a small script. It contains a line of code that will print a users age to screen if it is given at the command line.
 
@@ -482,11 +513,11 @@ There are several editors that you can run directly on the server. Editing direc
 	- <kbd>CTRL</kbd>+<kbd>g</kbd> cancels
     - <kbd>CTRL</kbd>+<kbd>x</kbd> <kbd>CTRL</kbd>+<kbd>s</kbd> saves
 
-### Reference: Creating a script
+## 3 - Creating a script
 
  You will be asked to type commands interactively, but in later topics you will be asked to create scripts. Here is an example to create a bash script, which by convention ends with `.sh`.
 
-# here we use nano, but you could use any other editor of choice
+### Here we use nano, but you could use any other editor of choice
 ```
 nano my_first_script.sh
 ```
@@ -514,35 +545,6 @@ If you see a window come up, then your X forwarding is configured correctly. Oth
 
 
 ![Image](/pages/topic_2_pics/emacs.png)
-
-### <a name="copying-files"></a> Reference: Copying files between servers (or between your computer and the server)
-
-   You can use `cp` to copy files from and to the same computer. To
-   copy across computers, you have to rely on networking tools. We
-   have collected information on copying files into [Copying across
-   machines](./copying_across_machines).
-
-##### *sed*
-*Stream editor*. It parses and transforms text using regular expressions. Very powerful, but most easily used to reformat files based on patterns.\
-**Examples**:
-* Replace all instances of "1" with "one".
-  * `seq 10 | sed s/1/one/g`
-* Replace lines that only have "1" with "one".
-    * `seq 10 | sed s/^1$/one/g`
-* Print lines 3 through 5.
-    * `seq 1 10 41 | sed -n 3,5p`
-
-##### *grep*
-*Search using regular expression (regex)*. This command searches for patterns and prints lines that match your pattern.\
-**Examples**:
-* Print all lines with "1".
-    * `seq 10 | grep 1`
-* Print all lines without "1".
-    * `seq 10 | grep -v 1`
-* Print all lines with "1" and "0"
-    * `seq 10 | grep 1 | grep 0`
-* Print all lines with "1" or "2"
-    * `seq 10 | grep "1\|2"`
 
 ____________________
 
