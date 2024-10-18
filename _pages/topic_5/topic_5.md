@@ -1,284 +1,339 @@
 ---
-title: "Topic 5: Sequence Alignment"
+title: "Topic 5 - Genome Assembly"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
 layout: post
 ---
 
-### Accompanying material
+## Recorded lecture
 
-* [Slides](./Topic_5.pdf)
+<iframe src="https://monash.au.panopto.com/Panopto/Pages/Embed.aspx?id=835dc4b6-e73c-4892-88cc-ac820189a883&autoplay=false&offerviewer=true&showtitle=true&showbrand=false&start=0&interactivity=all" height="405" width="720" style="border: 1px solid #464646;" allowfullscreen allow="autoplay"></iframe>
+
+## Accompanying material
+* Slides 2020: [UBC - De novo Assembly 2021](https://github.com/UBC-biol525D/UBC-biol525D.github.io/blob/master/Topic_4/Assembly2021Julia%20%20-%20JK.pdf)
+* Background reading: The present and future of de novo whole-genome assembly [Paper](https://academic.oup.com/bib/article/19/1/23/2339783?login=true#119542667). 
+
+Programming Resources (in this tutorial or from lecture)
+* [Flye Manual](https://github.com/fenderglass/Flye/blob/flye/docs/USAGE.md) and [Flye Paper](https://doi.org/10.1038/s41587-019-0072-8).
+* [Hslr Manual](https://github.com/vpc-ccg/haslr) and [Hslr Paper](https://www.cell.com/iscience/fulltext/S2589-0042(20)30577-0?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS2589004220305770%3Fshowall%3Dtrue).
+* [Spades Manual](https://github.com/fenderglass/Flye/blob/flye/docs/USAGE.md) and [Spades Paper](https://cab.spbu.ru/files/release3.15.3/manual.html).
+* [HiFiASM manual](https://github.com/chhylp123/hifiasm) and [HiFiASM paper](https://www.nature.com/articles/s41592-020-01056-5)
 
 
-Today we're going to align sequence data to a reference genome using BWA and explore what a BAM file is.
+## Code break questions
 
-Let's set up a directory structure so the resulting files will be organized and copy the raw data to your home directory.
+1. Write a one liner to find all the overlaps (i.e. the beginning or the end) exactly 4bp in length between CTCTAGGCC and a list of other sequences in the file /mnt/data/codebreaks/overlaps.fa
 
-```bash
+2. Find all the unique 9mers in a fasta sequence /mnt/data/codebreaks/kmer.fa
 
-# Navigate to your working directory
-cd ~
+This might be a tricky one and there are likely many ways to do this. First try out these commands that might help you complete this task. It might also be helpful to determine how many characters are in the sequence (wc -c).
 
-# Copy the reference genome to your working directory
-cp -r /mnt/data/fasta ./
-
-# Copy the fastq files to your working directory
-cp -r /mnt/data/fastq/GWAS_samples/ ./
-
-# Make a new directory for your resulting BAM files
-mkdir bam
-```
-We are going to work with the true genome of the species that you explored yesterday because we have limited time. However, can you think of how the choice of assembly would affect the mapping of our data?
-
-First let's index our reference genome.
+Hints: test out the following commands:
 
 ```bash
-# Index the references for BWA.
-
-bwa index fasta/SalmonReference.fasta
-
+cut -c1- /mnt/data/codebreaks/kmer.fa
+cut -c1-4 /mnt/data/codebreaks/kmer.fa
 ```
-
-Now finally we can run BWA and align our short read data.
-
-Using the approach 1 genome assembly:
-
 
 ```bash
-
-bwa mem \ # We have installed BWA on the VMs, but that might not always be the case
-  fasta/SalmonReference.fasta \
-  GWAS_samples/Salmon.p1.3.i1.400000_R1.fastq.gz \
-  GWAS_samples/Salmon.p1.3.i1.400000_R2.fastq.gz \
-  -t 2 \
-  -R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:biol525d\tLB:sample_1_library' \
-  > bam/Salmon.p1.3.i1.sam
-
+wc -c /mnt/data/codebreaks/kmer.fa
 ```
-*This will take a few moments to run*
-
-
-Lets break this command down since it has several parts:
-**/usr/bin/bwa** <= We're calling the program _bwa_ from the directory _/usr/bin/_. This is the full path to that program so you can call this no matter where you are in the file system.
-
-* **mem** <= This is the mode of bwa we are running. It is an option specific to bwa and not a Unix command.
-
-* **\\** <= Having this at the end of the line tells the shell that the line isn't finished and keeps going. You don't need to use this when typing commands in, but it helps break up really long commands and keeps your code more organized.
-
-* **fasta/SalmonReference.fasta** <= This is the reference genome. We're using a relative path here so you need be in /mnt/<USERNAME> or it won't be able to find this file.
-
-* **GWAS_samples/Salmon.p1.3.i1.400000_R1.fastq.gz** <= This is the forward read (e.g. read 1)  set for the first sample. It's also a relative path and we can see that the file has been gzipped (since it has a .gz ending).
-
-* **GWAS_samples/Salmon.p1.3.i1.400000_R2.fastq.gz** <= This is the reverse read (e.g. read 2)  set for the first sample.
-
-* **-t 2** <= This is telling the program how many threads (i.e. cpus) to use. In this case we're only using two because we're sharing the machine with the other students.
-
-* **-R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:biol525d\tLB:sample_1_library'** <= This is adding read group information to the resulting SAM file. Read group information lets other programs know what the sample name along with other factors. It is necessary for GATK to run later on.
-
-* **> bam/Salmon.p1.3.i1.sam** <= This is directing the output of the program into the file bam/Salmon.p1.3.i1.sam
-
-We now have our reads aligned to the genome in a human readable format (SAM) instead of binary format (bam) which we will use later. Generally we keep our data in BAM format because its more compressed but we can use this opportunity to better understand the format.
-
-
-Lets examine the SAM file. It contains all the information on the reads from the fastq file, but also alignment information.
 
 ```bash
-
-# Let's view that SAM file
-less -S bam/Salmon.p1.3.i1.sam
-
-# Notice the @PG line that includes the program call that created the SAM file.
-# This is useful for record keeping.
-
+for num in {1..10}
+do
+echo $num >> file.txt
+done
 ```
-### *Note*
-The option `-S` when running less chops lines that are longer than the page. This is normally just an aesthetic choice. When looking at SAM/BAM files this is quite necessary!
+What do these commands do? Can you use commands like this to find all the kmers in the sequence? 
 
 
-
-### Questions:
-1. How are reads ordered in the SAM file?
-2. What does the 6th column represent? What would the string "3M1I3M1D5M" tell you?
-3. What are three possible reasons why mapping quality could be low for a particular read?
-
-____________________________
-
-At this point we'll introduce a very useful - and incredibly widely used - piece of software called `samtools`. As the name suggests, `samtools` is a program for working with SAM/BAM files.
-
-### *Note*
-`samtools` can produce very useful summaries of alignments - try running `samtools flagstat bam/Salmon.p1.3.i1.sam`.
-
-A question that you might ask of an alignment would be, what proportion of my reads mapped to the genome? At this stage, our SAM file contains all the read data, whether reads mapped or not. Using `samtools`, we can easily get a count of the number of reads that successfully mapped to the genome.
-
+One approach we could use involves variable assignment. Variable assignment is a super powerful part of bash coding. A variable can be used as a shortcut for long path, or it can even contain the output of a command. The notation is as follows:
 
 ```bash
-
-samtools view -c bam/Salmon.p1.3.i1.sam
-
+shortpath="/mnt/data/fastq/shortreads/"
+ls $shortpath
+cmdout=`echo "test"`
+echo $cmdout
 ```
 
-Lets break this command down:
-* `samtools`  - the program tat we want to run
-* `view` - the mode we want to run the program in
-* `-c` - this flag indicates that we want a count of reads
-* `bam/Salmon.p1.3.i1.sam` - The input file
-
-
-This should have printed the total number of mapped reads to screen. There should be no surprises here.  
-
-Now what we're going to do is to remove the `-c` option, which causes `samtools` to send the output straight to STDOUT. This is handy as it means we can pipe it into another process.
-
-In the following, we'll take our SAM file (human readable) and convert to a BAM file (machine readable) and sort reads by their aligned position.
+Think about how you could incorporate some basic algebra and variable assignment to solve this problem.
 
 ```bash
-samtools view -bh bam/Salmon.p1.3.i1.sam | samtools sort > bam/Salmon.p1.3.i1.sort.bam
+#one way to do math in bash is by piping to bc (basic calculator).
+echo "1+1" | bc
+#another way to do arithmitic in bash is through the $(( )) syntax which tells shell to evaluate its contents
+echo $((1+1))
 ```
-
-
-Lets break this command down:
-* `samtools`  - the program tat we want to run
-* `view` - the mode we want to run the program in
-* `-bh` - this is actually two flags, one that tells samtools to express the data in binary form and the other that tells samtools to include the header
-* `bam/Salmon.p1.3.i1.sam` - The input file
-* `|` - The pipe symbol - you should be familiar with this by now
-* `samtools sort` - another mode of samtools that sorts SAM/BAM files by coordinate
-* `> bam/Salmon.p1.3.i1.sort.bam` - the name you want to give to the output file
-
-
-With this command we're using the pipe "|" to pass data directly between commands without saving the intermediates. This makes the command faster since its not saving the intermediate file to hard disk (which is slower). It can be more risky though because if any steps fails you have to start from the beginning.
-
-Next we want to take a look at our aligned reads. First we index the file, then we use samtools tview.
-
-```bash
-samtools index bam/Salmon.p1.3.i1.sort.bam # build an index of a BAM file
-samtools tview bam/Salmon.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta
-
-#use ? to open the help menu. Scroll left and right with H and L.
-#Try to find positions where the sample doesn't have the reference allele.
-
-```
-
-`samtools tview` is similar to IGV but is accessible directly from the command line.
-
-You can jump to a specific location in a BAM file with `samtools tview` using the following command:
-
-```
-
-samtools tview bam/Salmon.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta -p chr_1:80000
-
-```
-The additional option ` -p chr_1:80000 ` tells `tview` to jump straight to chr_1 position 80000. Any valid location in the SAM/BAM can be referenced that way.
-
-### *Note*
-
-Another useful summary that `samtools` can produce very quickly is coverage stats. Try running `samtools depth bam/Salmon.p1.3.i1.sort.bam`. Can you think of how you could use the tools you were learning yesterday could be used to take the output from `samtools` to quickly calculate the average depth?
-
-
-
-## Exercise
-
-
-A bash script is a plain text file (i.e. not rich text, nor a word doc) which contains bash commands. You can create the file on your computer and copy it over, or you can edit it directly from the server with one of the installed editors (this is covered in [topic 2, Editing](../Topic_2/#editing). The name of the file is up to you, but bash scripts are given the `.sh` extension by convention.
-
-Here's an example of what you might see inside a bash script:
-
-```
-age=10
-echo "I am $age years young"
-
-```
-(we used a similar example the other day)
-
-The lines of this script do the following:
-
-* `age=10` - this assigns the number 10 to a variable called `age`
-* `echo "I am $age years young"` - this prints a piece of text to the screen containing that age variable
-
-
-
-So a bash script (a.k.a. shell script) is a just set of commands saved as a file. If you named the shell script from above as a file named `myScript.sh`, you could execute the commands by simply running:
-
-```bash
-sh myScript.sh
-```
-
-_____________________________
-
-Obviously that example is a little silly, but hopefully you can see how writing shell scripts is a very useful and efficient way of organising your work at the command line.
-
-If you look in the `/mnt/data/fastq/GWAS_samples/` directory, you'll see that we have data here for 10 samples. It would be very tedious to align each one of these as we have for the single file above.
-
-For this exercise, try writing a bash script to produced a sorted BAM file for each sample as you have done for the single sample above.
-
-When writing a shell script, try to think of the steps that do not need to be repeated over and over again.
-
-
-HINTS:
-  * Use variables for directory paths e.g. `bwa=/mnt/bin/bwa-0.7.17/bwa`
-  * Use a loop.
-  {: .spoiler}
-
-MORE HINTS:
-  * for/while loops can receive input from stdin (or a file):
-
-        while read fname;
-	  do echo processing "$fname";
-	done < list_of_things.txt
-  {: .spoiler}
-
-  * You can do pathname manipulation with `basename` and `dirname` (see manual pages):
-
-    ```
-    dirname a/b/c          # prints a/b
-    basename a/b/c.gz      # prints c.gz
-    basename a/b/c.gz .gz  # prints c
-
-    fpath=/path/to/the/file.gz
-    base=$(basename "$fpath")    # assign "file.gz" to variable base
-    echo "$base"                 # prints file.gz
-    ```
-  {: .spoiler}
 
 <details>
 <summary markdown="span">**Answer**
 </summary>
 ```bash
-  # First set up variable names
-  # These may be slightly different on the VMs
-  bam=~/bam
-  fastq=~/GWAS_samples
-  bwa=bwa
-  ref_file=~/fasta/SalmonReference.fasta
-
-  #Then get a list of sample names, without suffixes
-  ls $fastq | grep R1.fastq.gz | sed s/_R1.fastq.gz//g > $bam/samplelist.txt
-
-  #Then loop through the samples
-  while read name
-  do
-    $bwa mem \
-    -R "@RG\tID:$name\tSM:$name\tPL:ILLUMINA" \
-    $ref_file \
-    $fastq/${name}_R1.fastq.gz \
-    $fastq/${name}_R2.fastq.gz \
-    -t 1 > $bam/$name.sam;
-
-    samtools view -bh $bam/$name.sam |\
-    samtools sort > $bam/$name.sort.bam;
-    samtools index $bam/$name.sort.bam
-
-    rm $bam/$name.sam # Remove intermediate file
-
-  done < $bam/samplelist.txt
+for i in {1..52} 
+do 
+k=$(($i+8))
+cut -c $i-$k /mnt/data/codebreaks/kmer.fa
+done
 ```
 </details>
 
-After your final BAM files are created, and you've checked that they look good, you should remove intermediate files to save space. You can build file removal into your bash scripts as we've done in the worked example, but it is often helpful to only add that in once the script is up and running. It's hard to troubleshoot a failed script if it deletes everything as it goes.
 
-### By topic 7, you should have created cleaned BAM files for all samples.
+## Tutorial 
 
-## Questions for Discussion
-1. Is an alignment with a higher percent of mapped reads always better than one with a lower percent? Why or why not?
-2. I want to reduce the percent of incorrectly mapped reads when using BWA. What setting or settings should I change in BWA?
-3. What are two ways that could be used to evaluate which aligner is best?
+Your goal for today is to see how well we can assemble a portion of the Salmon reference genome with short read, short+long read (hybrid), and long read only approaches. New software with improved algorithms and sequence technology-specific-approaches are constantly being developed so when you start your own assembly project, make sure to look around for the newest and most promising methods. It will also be highly dependent on the architecture of the genome you are trying to assemble (i.e. depending on repeat content, ploidy, etc.). Beyond just running the commands to run an assembler, we're going to focus on the things you should be considering leading up to assembling your genome (preproccessing/data quality assesment) and after (how good is my assembly?!).
+
+You've already spent some time getting familiar with the data we're working with - Our overall aim is to understand the evolutionary processes that allow salmon populations to persist across a key temperature gradient, and having a high quality reference genome will be indispensible for looking at not just the the frequency of variant nucleotides but their position relative to one another and other features of the genome. 
+
+For our assembly, since we only sequence one individual, we have two files for our short reads (one for forward reads and one for reverse) and one for long reads. We're going to be referring to these files alot so lets first make a short cut path to these files and then run fastqc on each.
+
+## First, lets check out our sequencing data!
+
+We just got back our high coverage illumina paired-end data and long-read pacbio data from the sequencing facility! Let's see how it turned out. We know that we expect all reads to be 150bp (including adapters) for our short read data, but we're curious _how long our long-read data is_.
+
+First lets specify variables for the paths to our data since we'll be working with them alot
+```bash
+shortreads="/mnt/data/fastq/shortreads/"
+longreads="/mnt/data/fastq/longreads/"
+```
+
+Lets break this down into steps.
+
+1) Subset only lines containing read information from our fastqs
+```bash
+cat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | head #why doesn't this work?
+zcat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | grep "chr" -A1 #what does the A option do?
+#dont forget about man to read the manual of the command grep!
+
+#we still have some extra information being printed.
+#what could you add to this pipe to only keep the sequence? hint: grep -v -E "match1|match2"
+```
+
+2) Get the length of every line (read)
+```bash
+#pipe the output above (every line = seperate read) to the following awk command. 
+awk -F "" '{print NR "\t" NF}'  #from the output, can you figure out what the awk variables NR and NF are? what does the -F "" option do?
+#save the output to longread_lengths.txt
+```
+
+Instead of just investigating by eye, it would be nice to get some quick stats of the read lengths of these datasets _i.e. what is the average read length for our long read datasets? how much variation is there around the mean?_ \
+
+While R is typically the go to place for statistical analyses, bash can also handle doing some intuitve stats, which will save us the headache of importing data into R.
+
+For example, awk is a super useful tool for working with column and row based analyses. A one-liner in awk can help us calculate the mean read length.
+
+```bash
+awk '{ total += $2 } END { print total/NR }' longread_lengths.txt #this gets the mean of column two.
+```
+
+**total += $2** <= set the variable "total" equal to the sum of all items in column 2 \
+
+**print total/NR** <= once finished (END), print the column sum after dividing by NR (number of rows) \
+
+
+We can get the quartiles of read length pretty easily with bash and some simple arithmetic.
+
+```bash
+LINECOUNT=`wc -l longread_lengths.txt | cut -d" " -f1`
+FIRSTQUART=`echo "$LINECOUNT * 1 / 4" | bc` 
+THIRDQUART=`echo "$LINECOUNT * 3 / 4" | bc` 
+cut -f2 longread_lengths.txt | sort -n | sed -n "$FIRSTQUART p" 
+cut -f2 longread_lengths.txt | sort -n | sed -n "$THIRDQUART p" 
+```
+**wc -l** <= number of lines \
+
+**cut -d" " -f1** <= keeps only the first column (based on a space delimeter) \
+
+**sed -n "N p"** <= prints (p) the line at value N \
+
+
+Nice. While theres some variance in our long-read lengths, its nice to see its actually quite consistent. 
+
+Another thing we might want to know is how much coverage our reads give us for each locus in our genome. We are working with a genome size of 10Mb. What is the expected estimate of coverage/bp in our long reads?
+
+
+```bash
+READLENGTH=`cat longread_lengths.txt | awk '{ total += $2 } END { print total/NR }' `
+NUMREADS=`wc -l longread_lengths.txt | cut -d" " -f1`
+MEANCOV=`echo "$READLENGTH * $NUMREADS / 10000000" | bc`
+echo "mean coverage = $MEANCOV" 
+
+```
+
+Both the average read length and expected coverage are good things to know for setting expectations for your genome assembly!
+
+## Genome Assembly
+
+Genome assembly can take a long time. Because our course is short, we won't have time to run these commands in tutorial. Instead, today we'll focus on comparing the quality of the assemblies produced through a few different programs, using short, short + long, or long read only data. 
+
+
+#### Short read assembly: SPADES - *don't run*
+#using a single core this takes ~14 minutes
+```bash
+#mkdir spades
+#/ohta1/julia.kreiner/software/SPAdes-3.
+#15.3-Linux/bin/spades.py \
+#	--pe1-1 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz \
+#	--pe1-2 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
+#	-o ./spades/
+````
+
+
+#### Hybrid (short + long) assembly - SPADES & HASLR - *don't run*
+#haslr takes ~15 minutes
+```bash
+#make new dir
+#mkdir hybridspades
+#run
+#/ohta1/julia.kreiner/software/SPAdes-3.15.3-Linux/bin/spades.py \
+#	--pe1-1 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz \
+#	--pe1-2 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
+#	--pacbio ${longreads}/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz \
+#	-t 20 \
+#	-o /hybridspades/ 
+
+#mkdir hybridhaslr
+#install
+#conda install -c bioconda haslr
+#run
+#haslr.py \
+#	-t 20 \
+#	-s ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
+#	-l ${longreads}/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz \
+#	-x pacbio \
+#	-g 10m \
+#	-o hybridhaslr \
+#	--cov-lr 40 #takes 15 minutes
+#
+```
+
+#### Long read assembly - FLYE - *don't run*
+#this took 8 minutes with 20 threads
+
+```bash
+#install
+#conda install flye
+
+#run flye assuming lower quality pacbio reads
+#flye \
+#	--pacbio-raw ${longreads}/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz \
+#	--threads 20 \
+#	-o flye/ 
+#	--genome-size 10m
+```
+
+Now we have four assemblies, 1 short read (spades), 2 hybrid (spades, haslr), and one long-read (flye).
+
+## Assess quality of assemblies
+
+Lets compare assemblies. First, copy these out of the /mnt/data/fasta directory
+
+```bash
+mkdir assemblies
+cd assemblies
+
+cp /mnt/data/fasta/spades_shortreadonly.fasta ./
+cp /mnt/data/fasta/spades_hybrid.fasta ./
+cp /mnt/data/fasta/haslr_hybrid.fasta ./
+cp /mnt/data/fasta/flye_longread.fasta ./
+
+#we could have done this in one line
+#cp /mnt/data/fasta/*.fasta
+```
+
+bbmap is command line alignment program that has a collection of nice scripts for library and sequence quality control. We're going to use its stats.sh script to get at some basic stats related to the number and length of sequences in our assembly.
+
+An important stat is N50: the number of contigs making up 50% of your assembly. 
+Relatedly, L50 describes for those largest sequences that make up 50% of your assembly, what the minimum sequence length is.
+This becomes more intutitive when you look at the lower table outputted by bbmap (unfortunately there is some inconsitency between these definitions in that L/N usage is often swapped, as you'll see later)
+
+We have several assemblies we want to generate stats for, so lets automate this using a for loop:
+```bash
+mkdir assembly_stats
+for i in spades_shortreadonly spades_hybrid haslr_hybrid flye_longread
+do
+
+/mnt/software/bbmap/stats.sh in=${i}.fasta > assembly_stats/${i}.stats
+
+done
+```
+
+Question: which genome has the best *contiguity* via N50/L50 metrics? Whats an issue with relying just on contiguity?
+
+Having a reference genome of a closely related species can really help asses how *accurate* our assemblies are. In our case we have one better - the high quality reference genome from which our reads were simulated. Lets test out Quast - a program for getting detail stats when comparing to a closely related high quality reference.
+
+Importantly, this allows us to get not just the number and length of our contigs/scaffolds, but also _completeness_ (possible when you know the target genome size) and _correctness_.
+
+```bash
+#it would be nice to know how well our assemblies have captured known genes. Lets extract this information from the true reference genome's gff file and format it as quast expects 
+head /mnt/data/gff/SalmonAnnotations_forIGV.gff
+
+#quast expects the column order as follows: chromosome, gene id, end, start
+cd /assemblies
+awk 'split($9,a,";") {print $1 "\t" a[1] "\t" $5 "\t" $4}' /mnt/data/gff/SalmonAnnotations_forIGV.gff | sed 's/ID=//g' > SalmonReference.genes
+
+#what does $1 and $5 represent in the command above? Awk lets you manipulate columns in all sorts of ways - take note of "split". Here we're splitting column 9 by the delimiter ";" and save each index of the split to an array "a" (i.e. a[1], a[2], a[3], etc)
+
+#run quast on all 4 assemblies at once
+/mnt/software/quast-5.2.0/quast.py --help #check out the manual
+#notice we're not going to worry about the advanced options 
+
+/mnt/software/quast-5.2.0/quast.py flye_longread.fasta haslr_hybrid.fasta spades_hybrid.fasta spades_shortreadonly.fasta \
+	-r /mnt/data/fasta/SalmonReference.fasta \
+	-g SalmonReference.genes \
+	-o quast_out
+
+scp -r <username@ip.address>:/home/<usr>/assemblies/quast_out/ ./
+```
+
+Open the report.html results file in your browser and explore the outcome of our assembly efforts. Make sure to eventually click the "View in icarus contig browser".
+
+Question: what new information does this report give us?
+
+
+
+## Review some important command line operations we used today.
+
+For loops - this can be a list of items seperated by spaces or you can specify of range numeric values to use a an iterator
+```bash
+for i in {1..100}
+do
+echo $i
+done
+```
+or
+
+```bash
+for i in 1 2 3 4 5
+do
+echo $i
+done
+```
+
+Making new folders `mkdir` \
+
+Renaming files `mv` and moving them  `mv file path/new_file_name` \
+
+Counting `wc -l` \
+
+Find and replace `sed 's/find/replace/g'` \
+
+Printing a particuar row `sed -n "10p" SalmonReference.genes` \
+
+Column means with `awk '{ total += $2 } END { print total/NR }'` \
+
+Assigning variables `shortreads="/mnt/data/shortreads/"` and calling them `echo ${shortreads}` \
+
+Printing and splitting certain columns (specified with $) with awk 
+```bash
+awk 'split($9,a,";") {print $1 "\t" a[1] "\t" $5 "\t" $4}'
+#split column 9 by the delimeter ";" and save every split value into the array a
+#print column 1, the first value of array a, column 5, and column 4
+```
+
+Cut also allows your to print certain columns but the order will be the same as provided in the input. For e.g., compare the following outputs.
+```bash
+cut -f2,1 SalmonReference.genes 
+cut -f1,2 SalmonReference.genes
+```

@@ -1,5 +1,5 @@
 ---
-title: "Topic 4: Genome Assembly"
+title: "Topic 4 - Sequence Alignment"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
@@ -7,8 +7,6 @@ layout: post
 ---
 
 ## Recorded lecture
-
-<iframe src="https://monash.au.panopto.com/Panopto/Pages/Embed.aspx?id=835dc4b6-e73c-4892-88cc-ac820189a883&autoplay=false&offerviewer=true&showtitle=true&showbrand=false&start=0&interactivity=all" height="405" width="720" style="border: 1px solid #464646;" allowfullscreen allow="autoplay"></iframe>
 
 ## Accompanying material
 * Slides 2020: [UBC - De novo Assembly 2021](https://github.com/UBC-biol525D/UBC-biol525D.github.io/blob/master/Topic_4/Assembly2021Julia%20%20-%20JK.pdf)

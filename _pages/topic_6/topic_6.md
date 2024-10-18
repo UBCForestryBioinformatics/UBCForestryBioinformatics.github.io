@@ -1,5 +1,5 @@
 ---
-title: "Topic 6: RNAseq analysis exercise"
+title: "Topic 6 - RNAseq Analysis"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
