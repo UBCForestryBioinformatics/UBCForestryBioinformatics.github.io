@@ -6,9 +6,6 @@ category: Jekyll
 layout: post
 ---
 
-## Recorded lecture
-
-<iframe src="https://monash.au.panopto.com/Panopto/Pages/Embed.aspx?id=835dc4b6-e73c-4892-88cc-ac820189a883&autoplay=false&offerviewer=true&showtitle=true&showbrand=false&start=0&interactivity=all" height="405" width="720" style="border: 1px solid #464646;" allowfullscreen allow="autoplay"></iframe>
 
 ## Accompanying material
 * Slides 2020: [UBC - De novo Assembly 2021](https://github.com/UBC-biol525D/UBC-biol525D.github.io/blob/master/Topic_4/Assembly2021Julia%20%20-%20JK.pdf)
@@ -21,93 +18,36 @@ Programming Resources (in this tutorial or from lecture)
 * [HiFiASM manual](https://github.com/chhylp123/hifiasm) and [HiFiASM paper](https://www.nature.com/articles/s41592-020-01056-5)
 
 
-## Code break questions
-
-1. Write a one liner to find all the overlaps (i.e. the beginning or the end) exactly 4bp in length between CTCTAGGCC and a list of other sequences in the file /mnt/data/codebreaks/overlaps.fa
-
-2. Find all the unique 9mers in a fasta sequence /mnt/data/codebreaks/kmer.fa
-
-This might be a tricky one and there are likely many ways to do this. First try out these commands that might help you complete this task. It might also be helpful to determine how many characters are in the sequence (wc -c).
-
-Hints: test out the following commands:
-
-```bash
-cut -c1- /mnt/data/codebreaks/kmer.fa
-cut -c1-4 /mnt/data/codebreaks/kmer.fa
-```
-
-```bash
-wc -c /mnt/data/codebreaks/kmer.fa
-```
-
-```bash
-for num in {1..10}
-do
-echo $num >> file.txt
-done
-```
-What do these commands do? Can you use commands like this to find all the kmers in the sequence? 
-
-
-One approach we could use involves variable assignment. Variable assignment is a super powerful part of bash coding. A variable can be used as a shortcut for long path, or it can even contain the output of a command. The notation is as follows:
-
-```bash
-shortpath="/mnt/data/fastq/shortreads/"
-ls $shortpath
-cmdout=`echo "test"`
-echo $cmdout
-```
-
-Think about how you could incorporate some basic algebra and variable assignment to solve this problem.
-
-```bash
-#one way to do math in bash is by piping to bc (basic calculator).
-echo "1+1" | bc
-#another way to do arithmitic in bash is through the $(( )) syntax which tells shell to evaluate its contents
-echo $((1+1))
-```
-
-<details>
-<summary markdown="span">**Answer**
-</summary>
-```bash
-for i in {1..52} 
-do 
-k=$(($i+8))
-cut -c $i-$k /mnt/data/codebreaks/kmer.fa
-done
-```
-</details>
-
 
 ## Tutorial 
 
-Your goal for today is to see how well we can assemble a portion of the Salmon reference genome with short read, short+long read (hybrid), and long read only approaches. New software with improved algorithms and sequence technology-specific-approaches are constantly being developed so when you start your own assembly project, make sure to look around for the newest and most promising methods. It will also be highly dependent on the architecture of the genome you are trying to assemble (i.e. depending on repeat content, ploidy, etc.). Beyond just running the commands to run an assembler, we're going to focus on the things you should be considering leading up to assembling your genome (preproccessing/data quality assesment) and after (how good is my assembly?!).
+Your goal for today is to see how well we can assemble a portion of the Salmon reference genome with PacBio HiFi reads and the '''hifiasm''' assembler.
 
-You've already spent some time getting familiar with the data we're working with - Our overall aim is to understand the evolutionary processes that allow salmon populations to persist across a key temperature gradient, and having a high quality reference genome will be indispensible for looking at not just the the frequency of variant nucleotides but their position relative to one another and other features of the genome. 
+HiFi reads represent the state-of-the art for genome assembly. However, they are fairly expensive and are not necessarily what is going to be available to depend on many factors (i.e. project budget, sample availability etc.). For the sake of today's tutorial, we're just going to focus on HiFi reads, but make sure to look around for the newest and most promising methods for other data types. The methods adopted will also be highly dependent on the architecture of the genome you are trying to assemble (i.e. depending on repeat content, ploidy, etc.). Beyond just running the commands to run an assembler, we're going to focus on the things you should be considering once those commands have finished running. 
 
-For our assembly, since we only sequence one individual, we have two files for our short reads (one for forward reads and one for reverse) and one for long reads. We're going to be referring to these files alot so lets first make a short cut path to these files and then run fastqc on each.
+You've already spent some time getting familiar with the data we're working with (e.g. fastq files). While our overall aims may be to understand important evolutionary processes, high quality reference genomes will be indispensible for examining patterns of polymorphism across the genome and across populations.
+
+For today's tutorial, we're going tp be working with two sets of HiFi reads, one high coverage and one lower coverage set. 
 
 ## First, lets check out our sequencing data!
 
-We just got back our high coverage illumina paired-end data and long-read pacbio data from the sequencing facility! Let's see how it turned out. We know that we expect all reads to be 150bp (including adapters) for our short read data, but we're curious _how long our long-read data is_.
+We just got back our PacBio HiFi reads from the sequencing facility! Let's see how it turned out. First lets specify variables for the paths to our data since we'll be working with them alot...
 
-First lets specify variables for the paths to our data since we'll be working with them alot
 ```bash
-shortreads="/mnt/data/fastq/shortreads/"
-longreads="/mnt/data/fastq/longreads/"
+highCov="/mnt/data/fastq/hifi/"
+lowCov="/mnt/data/fastq/hifi/"
 ```
 
 Lets break this down into steps.
 
 1) Subset only lines containing read information from our fastqs
 ```bash
-cat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | head #why doesn't this work?
-zcat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | grep "chr" -A1 #what does the A option do?
-#dont forget about man to read the manual of the command grep!
+cat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | head # why doesn't this work?
+zcat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | grep "chr" -A1 #what  does the A option do?
+# don't forget about man to read the manual of the command grep!
 
-#we still have some extra information being printed.
-#what could you add to this pipe to only keep the sequence? hint: grep -v -E "match1|match2"
+# we still have some extra information being printed.
+# what could you add to this pipe to only keep the sequence? hint: grep -v -E "match1|match2"
 ```
 
 2) Get the length of every line (read)
