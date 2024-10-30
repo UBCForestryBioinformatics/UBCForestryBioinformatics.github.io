@@ -34,16 +34,15 @@ For today's tutorial, we're going tp be working with two sets of HiFi reads, one
 We just got back our PacBio HiFi reads from the sequencing facility! Let's see how it turned out. First lets specify variables for the paths to our data since we'll be working with them alot...
 
 ```bash
-highCov="/mnt/data/fastq/hifi/"
-lowCov="/mnt/data/fastq/hifi/"
+hifiDir="/mnt/data/fastq/hifi/"
 ```
 
 Lets break this down into steps.
 
 1) Subset only lines containing read information from our fastqs
 ```bash
-cat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | head # why doesn't this work?
-zcat $longreads/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz | grep "chr" -A1 #what  does the A option do?
+cat $hifiDir/mergedHiFi.ccs.20.fastq.gz | head # why doesn't this work?
+zcat $hifiDir/mergedHiFi.ccs.20.fastq.gz | grep "^@" -A1 #what  does the A option do?
 # don't forget about man to read the manual of the command grep!
 
 # we still have some extra information being printed.
@@ -88,7 +87,7 @@ cut -f2 longread_lengths.txt | sort -n | sed -n "$THIRDQUART p"
 **sed -n "N p"** <= prints (p) the line at value N \
 
 
-Nice. While theres some variance in our long-read lengths, its nice to see its actually quite consistent. 
+Nice. While theres quite a lot of variance in our long-read lengths. With HiFi reads, we are typically aiming fror around 17,000bp reads
 
 Another thing we might want to know is how much coverage our reads give us for each locus in our genome. We are working with a genome size of 10Mb. What is the expected estimate of coverage/bp in our long reads?
 
@@ -103,69 +102,41 @@ echo "mean coverage = $MEANCOV"
 
 Both the average read length and expected coverage are good things to know for setting expectations for your genome assembly!
 
+**What coverage should we expect from the ```$hifiDir/mergedHiFi.ccs.20.fastq.gz``` file?**
+
 ## Genome Assembly
 
-Genome assembly can take a long time. Because our course is short, we won't have time to run these commands in tutorial. Instead, today we'll focus on comparing the quality of the assemblies produced through a few different programs, using short, short + long, or long read only data. 
+Genome assembly can take a long time. Because our course is short, we won't have time to explore lots of different options for assembly. So for today, let's just run  ```hifiasm``` and see how we go assembling our salmon genome from the hifi data.
 
+We will compare this to an assembly constructed with short reads a little later on.
 
-#### Short read assembly: SPADES - *don't run*
-#using a single core this takes ~14 minutes
-```bash
-#mkdir spades
-#/ohta1/julia.kreiner/software/SPAdes-3.
-#15.3-Linux/bin/spades.py \
-#	--pe1-1 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz \
-#	--pe1-2 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
-#	-o ./spades/
-````
-
-
-#### Hybrid (short + long) assembly - SPADES & HASLR - *don't run*
-#haslr takes ~15 minutes
-```bash
-#make new dir
-#mkdir hybridspades
-#run
-#/ohta1/julia.kreiner/software/SPAdes-3.15.3-Linux/bin/spades.py \
-#	--pe1-1 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz \
-#	--pe1-2 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
-#	--pacbio ${longreads}/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz \
-#	-t 20 \
-#	-o /hybridspades/ 
-
-#mkdir hybridhaslr
-#install
-#conda install -c bioconda haslr
-#run
-#haslr.py \
-#	-t 20 \
-#	-s ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
-#	-l ${longreads}/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz \
-#	-x pacbio \
-#	-g 10m \
-#	-o hybridhaslr \
-#	--cov-lr 40 #takes 15 minutes
-#
-```
-
-#### Long read assembly - FLYE - *don't run*
-#this took 8 minutes with 20 threads
+### Running HiFiasm 
 
 ```bash
-#install
-#conda install flye
+mkdir genome_assembly
+/softwareDirectory/software/hifiasm \
+	-o genome_assembly/myhifi_assembly \ # You can call this anything you like though
+	$hifiDir/mergedHiFi.ccs.20.fastq.gz
+	
+ ```
 
-#run flye assuming lower quality pacbio reads
-#flye \
-#	--pacbio-raw ${longreads}/SalmonSim.Stabilising.p1.3.30k.PacBio.fastq.gz \
-#	--threads 20 \
-#	-o flye/ 
-#	--genome-size 10m
-```
+The above step should take about two minutes or so. When it's done, take a look at your  ```genome_assembly/``` directory to see the files that were generated.
 
-Now we have four assemblies, 1 short read (spades), 2 hybrid (spades, haslr), and one long-read (flye).
+Take a look at the [documentation for hifiasm to get an idea of what is contained in the different output files.](https://hifiasm.readthedocs.io/en/latest/interpreting-output.html#interpreting-output)
 
-## Assess quality of assemblies
+### Extract primary assembly from hifiasm output
+
+As you can see, ```hifiasm``` has generated a phased genome assembly. However, the files are not in FASTA format, they are in the ```*.gfa``` format - which stands for Graphical Fragment Assembly format. In this format, contigs are stored in tab delimited files with a different format from FASTA. Specifically, ```*.gfa``` files contain information on how segments overlap with each other. [The full specification of these files is contained here](https://gfa-spec.github.io/GFA-spec/GFA1.html). However, for most downstream purposes we'll want a FASTA file that contains just the contigs.
+
+The contigs present in the primarty assembly constructed by ```hifiasm``` are stored in the file ```genome_assembly/myhifi_assembly.bp.p_ctg.gfa``` (if you altered the name of the assembly from the code above you'll need to account for that). The contigs themslves are stored on "segment" lines of gfa files, so we'll need to grab them to 
+
+
+
+awk '/^S/{print ">"$2;print $3}' test.bp.p_ctg.gfa > test.p_ctg.fa  # get primary contigs in FASTA
+
+
+
+## Assess quality of assembly
 
 Lets compare assemblies. First, copy these out of the /mnt/data/fasta directory
 
@@ -174,9 +145,6 @@ mkdir assemblies
 cd assemblies
 
 cp /mnt/data/fasta/spades_shortreadonly.fasta ./
-cp /mnt/data/fasta/spades_hybrid.fasta ./
-cp /mnt/data/fasta/haslr_hybrid.fasta ./
-cp /mnt/data/fasta/flye_longread.fasta ./
 
 #we could have done this in one line
 #cp /mnt/data/fasta/*.fasta
