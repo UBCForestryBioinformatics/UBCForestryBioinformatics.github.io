@@ -87,7 +87,7 @@ cut -f2 longread_lengths.txt | sort -n | sed -n "$THIRDQUART p"
 **sed -n "N p"** <= prints (p) the line at value N \
 
 
-Nice. While theres quite a lot of variance in our long-read lengths. With HiFi reads, we are typically aiming fror around 17,000bp reads
+Nice. While theres quite a lot of variance in our long-read lengths. With HiFi reads, we are typically aiming for around 17,000bp 
 
 Another thing we might want to know is how much coverage our reads give us for each locus in our genome. We are working with a genome size of 10Mb. What is the expected estimate of coverage/bp in our long reads?
 
@@ -110,14 +110,16 @@ Genome assembly can take a long time. Because our course is short, we won't have
 
 We will compare this to an assembly constructed with short reads a little later on.
 
-### Running HiFiasm 
+## Running HiFiasm 
+
+Now let's take our HiFi data and use ```hifiasm```:
 
 ```bash
-mkdir genome_assembly
+# Make a location for the genome assembly to live
+mkdir hifi_genome_assembly
 /softwareDirectory/software/hifiasm \
-	-o genome_assembly/myhifi_assembly \ # You can call this anything you like though
+	-o genome_assembly/HiFi.ccs.20 \ # You can call this anything you like though
 	$hifiDir/mergedHiFi.ccs.20.fastq.gz
-	
  ```
 
 The above step should take about two minutes or so. When it's done, take a look at your  ```genome_assembly/``` directory to see the files that were generated.
@@ -126,19 +128,56 @@ Take a look at the [documentation for hifiasm to get an idea of what is containe
 
 ### Extract primary assembly from hifiasm output
 
-As you can see, ```hifiasm``` has generated a phased genome assembly. However, the files are not in FASTA format, they are in the ```*.gfa``` format - which stands for Graphical Fragment Assembly format. In this format, contigs are stored in tab delimited files with a different format from FASTA. Specifically, ```*.gfa``` files contain information on how segments overlap with each other. [The full specification of these files is contained here](https://gfa-spec.github.io/GFA-spec/GFA1.html). However, for most downstream purposes we'll want a FASTA file that contains just the contigs.
+As you can see, ```hifiasm``` has generated a phased genome assembly. However, the files are not in FASTA format, they are in the ```*.gfa``` format - which stands for Graphical Fragment Assembly format. In this format, contigs are stored in tab delimited files with a different format from FASTA. Specifically, ```*.gfa``` files contain information on how segments overlap with each other. [The full specification of these files is contained here](https://gfa-spec.github.io/GFA-spec/GFA1.html). However, for most downstream purposes we'll want a FASTA file that contains just the contigs. *Note that ```hifiasm``` uses version 1 of the GFA format.*
 
-The contigs present in the primarty assembly constructed by ```hifiasm``` are stored in the file ```genome_assembly/myhifi_assembly.bp.p_ctg.gfa``` (if you altered the name of the assembly from the code above you'll need to account for that). The contigs themslves are stored on "segment" lines of gfa files, so we'll need to grab them to 
+The contigs present in the primary assembly constructed by ```hifiasm``` are stored in the file ```genome_assembly/HiFi.ccs.20.bp.p_ctg.gfa``` (if you altered the name of the assembly from the code above you'll need to account for that). The contigs themslves are stored on "segment" lines of gfa files, so we'll need to grab them to make a FASTA. 
 
-
-
-awk '/^S/{print ">"$2;print $3}' test.bp.p_ctg.gfa > test.p_ctg.fa  # get primary contigs in FASTA
+In GFA files, lines beginning with ```S``` are "segment" lines and have the following structure... 
 
 
+| Column | Field        | Type      | Regexp              | Description
+|--------|--------------|-----------|---------------------|------------
+| 1      | `RecordType` | Character | `S`                 | Record type
+| 2      | `Name`       | String    | `[!-)+-<>-~][!-~]*` | Segment name
+| 3      | `Sequence`   | String    | `\*\|[A-Za-z=.]+`    | Optional nucleotide sequence
 
-## Assess quality of assembly
+So we'll need to grab the contig/segment name (in the second column) and the sequence name (the third column) to convert the GFA to a FASTA File. 
 
-Lets compare assemblies. First, copy these out of the /mnt/data/fasta directory
+The following AWK comman can do it very efficiently:
+
+```bash
+awk '/^S/{print ">"$2;print $3}' genome_assembly/HiFi.ccs.20.bp.p_ctg.gfa > genome_assembly/HiFi.ccs.20.p_ctg.fasta  # get primary contigs in FASTA
+```
+
+Take a look at the FASTA file that you just made. How many contigs are there in the assembly you made? What is the total length of the assembly you generated?
+
+___________________
+
+In the ```$hifiDir``` directory you'll also find another file called  ```mergedHiFi.ccs.50.fastq.gz```. Using the steps as a template, construct a genome assembly with hifiasm using that file. What is the coverage in that file? Do you expect the genome assembly to be better or worse than the one we made using the ```mergedHiFi.ccs.50.fastq.gz``` file?
+
+## Assessing quality of assemblies
+
+Now that we've constructed a couple of genome assemblies, it would be a great idea to compare them to determine which one should be used for downstream analyses. 
+
+As we mentioned above, we constructed an assembly with short reads from the same individual we got the hifi reads from. However, it takes too long to assemble that for this tutorial, so we'll just give you the resulting assembly. 
+
+
+
+
+<details>
+<summary markdown="span">**If you click here you can take a look at the code that we used. **
+</summary>
+*DON'T RUN THIS CODE TODAY*
+```bash
+mkdir spades
+/software/SPAdes-3.15.3-Linux/bin/spades.py \
+	--pe1-1 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R1.fastq.gz \
+	--pe1-2 ${shortreads}/SalmonSim.Stabilising.p1.1.6400000_R2.fastq.gz \
+	-o ./spades/
+```
+</details>
+
+The output file for that short-read only assembly done with Spades can be found here in the /mnt/data/fasta directory...
 
 ```bash
 mkdir assemblies
@@ -146,20 +185,23 @@ cd assemblies
 
 cp /mnt/data/fasta/spades_shortreadonly.fasta ./
 
-#we could have done this in one line
-#cp /mnt/data/fasta/*.fasta
+mv genome_assembly/HiFi.ccs.lowCoverage.p_ctg.fasta assemblies/
+mv genome_assembly/HiFi.ccs.highCoverage.p_ctg.fasta assemblies/
 ```
+_______________
 
-bbmap is command line alignment program that has a collection of nice scripts for library and sequence quality control. We're going to use its stats.sh script to get at some basic stats related to the number and length of sequences in our assembly.
+We're going to use ```bmap``` to compare our assemblies. ```bbmap``` is command line alignment program that has a collection of nice scripts for library and sequence quality control. We're going to use its ```stats.sh``` script to get at some basic stats related to the number and length of sequences in our assembly.
 
 An important stat is N50: the number of contigs making up 50% of your assembly. 
+
 Relatedly, L50 describes for those largest sequences that make up 50% of your assembly, what the minimum sequence length is.
+
 This becomes more intutitive when you look at the lower table outputted by bbmap (unfortunately there is some inconsitency between these definitions in that L/N usage is often swapped, as you'll see later)
 
 We have several assemblies we want to generate stats for, so lets automate this using a for loop:
 ```bash
 mkdir assembly_stats
-for i in spades_shortreadonly spades_hybrid haslr_hybrid flye_longread
+for i in spades_shortreadonly HiFi.ccs.lowCoverage.p_ctg HiFi.ccs.highCoverage.p_ctg
 do
 
 /mnt/software/bbmap/stats.sh in=${i}.fasta > assembly_stats/${i}.stats
@@ -183,15 +225,20 @@ awk 'split($9,a,";") {print $1 "\t" a[1] "\t" $5 "\t" $4}' /mnt/data/gff/SalmonA
 
 #what does $1 and $5 represent in the command above? Awk lets you manipulate columns in all sorts of ways - take note of "split". Here we're splitting column 9 by the delimiter ";" and save each index of the split to an array "a" (i.e. a[1], a[2], a[3], etc)
 
-#run quast on all 4 assemblies at once
+#run quast on all 3 assemblies at once
 /mnt/software/quast-5.2.0/quast.py --help #check out the manual
 #notice we're not going to worry about the advanced options 
 
-/mnt/software/quast-5.2.0/quast.py flye_longread.fasta haslr_hybrid.fasta spades_hybrid.fasta spades_shortreadonly.fasta \
+/mnt/software/quast-5.2.0/quast.py spades_shortreadonly.fasta HiFi.ccs.lowCoverage.p_ctg.fasta HiFi.ccs.highCoverage.p_ctg.fasta \
 	-r /mnt/data/fasta/SalmonReference.fasta \
 	-g SalmonReference.genes \
 	-o quast_out
+ ```
 
+Quast makes some nice HTML formatted reports that we can check out to see how the different assemblies compare. Log out of your terminal session and copy the Quast output to your local machine (i.e. laptop).  
+
+```
+## You'll need to edit the following with your own username and the appropriate IP
 scp -r <username@ip.address>:/home/<usr>/assemblies/quast_out/ ./
 ```
 
@@ -199,7 +246,7 @@ Open the report.html results file in your browser and explore the outcome of our
 
 Question: what new information does this report give us?
 
-
+Which assembly is the best of the ones we have? 
 
 ## Review some important command line operations we used today.
 
