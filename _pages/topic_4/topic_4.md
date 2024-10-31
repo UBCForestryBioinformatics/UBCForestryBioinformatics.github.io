@@ -6,20 +6,10 @@ category: Jekyll
 layout: post
 ---
 
-## Recorded lecture
-
 ## Accompanying material
-* Slides 2020: [UBC - De novo Assembly 2021](https://github.com/UBC-biol525D/UBC-biol525D.github.io/blob/master/Topic_4/Assembly2021Julia%20%20-%20JK.pdf)
-* Background reading: The present and future of de novo whole-genome assembly [Paper](https://academic.oup.com/bib/article/19/1/23/2339783?login=true#119542667). 
-
-Programming Resources (in this tutorial or from lecture)
-* [Flye Manual](https://github.com/fenderglass/Flye/blob/flye/docs/USAGE.md) and [Flye Paper](https://doi.org/10.1038/s41587-019-0072-8).
-* [Hslr Manual](https://github.com/vpc-ccg/haslr) and [Hslr Paper](https://www.cell.com/iscience/fulltext/S2589-0042(20)30577-0?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS2589004220305770%3Fshowall%3Dtrue).
-* [Spades Manual](https://github.com/fenderglass/Flye/blob/flye/docs/USAGE.md) and [Spades Paper](https://cab.spbu.ru/files/release3.15.3/manual.html).
-* [HiFiASM manual](https://github.com/chhylp123/hifiasm) and [HiFiASM paper](https://www.nature.com/articles/s41592-020-01056-5)
 
 
-## Code break questions
+## 1. k-mers  
 
 1. Write a one liner to find all the overlaps (i.e. the beginning or the end) exactly 4bp in length between CTCTAGGCC and a list of other sequences in the file /mnt/data/codebreaks/overlaps.fa
 
@@ -78,4 +68,34 @@ done
 </details>
 
 
-## Tutorial 
+
+______________
+
+
+## 2. Nucleotide BLAST
+
+Very frequently in high-throughput bioinformatics we are interested in aligning fragments of DNA against a large reference genome. In this context, our sequencing reads (i.e. the fragmented DNA) is referred to as a *query sequence* that we want to compare with a *subject sequence* (the reference genome).
+
+Select one of the k-mers from the list you generated above.  
+
+<details>
+<summary markdown="span">**If you didn't finish the above bit click here to get a 9-mer to work with**
+</summary>
+```ATCGCACAA```
+</details>
+
+With your 9-mer, identify regions of the reference genome that contain that sequence
+
+
+would like identify regions in the genome where the fragmented DNA (e.g. short or long reads) exhibit good alignment with the reference genome.
+
+
+If we made a database that contained all the 9-mers present in a species' reference genome, we could index the genome using hash tables (or something like that) to quickly look up where occurences of 
+
+By indexing each sequence with respect to the 9-mers that you listed into a hash index  
+
+
+Now we're going to shift gears a little and actually align some sequences. 
+
+Quickly count the number of reads in the ```SHORT_READ_FASTQ``` file. How long does it take to BLAST one of those files against the Salmon reference genome? For many eukaryotes, with genomes that are >10-100 times the size of the simulated genome we're working with here, we would have that many more sequencing reads for comparable coverage as well as a larger reference genome to compare to. For example, in the human genome (approx 3Gbp) 30x coverage is acheived with ~300,000,000 paired-end reads. Roughly speaking how long would it take to BLAST that many reads against the 
+

@@ -116,7 +116,7 @@ unzip fastqc_v0.11.9.zip
 cd FastQC
 
 ## Make the fastqc file executable:
-chmod 755 fastqc ## Add execute permissions for all users
+Can't exec "java": No such file or directory at ./fastqc line 350.
 
 ```
 
