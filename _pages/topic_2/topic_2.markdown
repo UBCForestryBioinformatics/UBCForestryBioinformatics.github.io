@@ -19,7 +19,8 @@ We have tried to focus on concepts rather than particular software packages in t
 
 ### Accompanying material
 
-* [Slides](./Topic_2.pdf)
+[Lecture Slides](/pages/topic_2/Topic_2.pdf)
+
 * [Software Carpentry Tutorial](http://swcarpentry.github.io/shell-novice/)
 
 # Part 0 - Logging on to the servers:
