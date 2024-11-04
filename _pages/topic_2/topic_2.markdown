@@ -23,7 +23,7 @@ We have tried to focus on concepts rather than particular software packages in t
 
 * [Software Carpentry Tutorial](http://swcarpentry.github.io/shell-novice/)
 
-# Part 0 - Logging on to the servers:
+# 0 - Logging on to the servers:
 
 We have set up virtual machines (VM) for the workshop. You should have received an email about the particular VM you'll be using. To access the VMs we'll use a command line program called "Secure Shell" (```ssh```).
 
