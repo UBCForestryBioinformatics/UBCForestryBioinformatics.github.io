@@ -49,7 +49,7 @@ ssh my_user_name@123.456.789
 ```
 When you hit enter, you'll be asked to enter your password. Note that when you do that you will not see any text appear as you write - this is a security feature of ```ssh```.
 
-# Part 1 - Interface:
+# 1 - Interface:
 
 
 ## 1.1 - Prompt or command line
@@ -139,6 +139,7 @@ Some of these are really simple, but are crucially important for being able to n
 most programs come with a manual page, explaining all options. You can get help about individual command with the following:
 
 1. for command structure, variables, and shell rules: `man bash`
+1. many executable programs come with bulit in manuals and help files. These are often accessed by writing ```<program> --help``` or ```<program> -h```. The exact details of these commands do vary by program though 
 1. bash builtins: `help`, and `help <cmd>`. help on for loops: `help for`, help on conditionals `help if`, help on change directory `help cd`, etc.
 1. for help on external programs, like `ls`, `grep`, `sed`, `awk` you have to look at their manual pages: e.g. `man sed`
 1. for viewing the contents of a file on screen, use `less`
@@ -151,7 +152,7 @@ Programs like `man` and `less` show an on-screen navigation system:
  - <kbd>q</kbd> *q*uits.
 
 
-## 2 - Interface: STDIO
+# 2 - Interface: STDIO
 
 There are three data streams that programs have access to in UNIX like systems. Remember, everything is a file, so we can work with each element as we see fit.
 
@@ -284,7 +285,7 @@ ____________________
 
 ### Metacharacters
 
-Metacharacters are a class of characters that convey specific instructions to the operating system The pipe and redirect symbols ("|", "<" and ">") are examples of metacharacters.
+Metacharacters are a class of characters that convey specific instructions to the operating system The pipe and redirect symbols ("&#124;", "<" and ">") are examples of metacharacters.
 
 ### Wild cards
 
@@ -490,18 +491,18 @@ The above should have run happily and printed our nice message to screen.
 In your life as a bioinformatician, you'll spend a lot of time writing and editing scripts. Scripts are human readable text documents so you'll need software to write and edit your code.
 
 
-*Do not use word processing software like Pages, Notepad or Word at all when you're working with scripts or code*. These programs do not typically generate plain  documents. Even opening files in those programs can cause you headaches, so they should be avoided at all costs! Instead, look up some script editing software. There are lots of options. My personal favourite is Atom ([https://atom.io/](https://atom.io/)), but there are others such as Sublime Text, Visual Studio Code (VS Code) or Gedit. Script editing software often has lots of handy features like syntax highlighting which make coding and scripting much easier.  Your computer will have shipped with a simple plain text editor (e.g. Wordpad or gedit), and these are totally fine for using during the workshop.
+*Do not use word processing software like Pages or Word at all when you're working with scripts or code*. These programs do not typically generate plain  documents. Even opening files in those programs can cause you headaches, so they should be avoided at all costs! Instead, look up some script editing software. There are lots of options. My personal favourite is Visual Studio Code  ([https://code.visualstudio.com/](https://code.visualstudio.com/)), but there are others such as Sublime Text or Gedit. Notepad++ is usefuil for Windows [https://notepad-plus-plus.org/](https://notepad-plus-plus.org/) Script editing software often has lots of handy features like syntax highlighting which make coding and scripting much easier.  Your computer will have shipped with a simple plain text editor (e.g. Wordpad or gedit), and these are totally fine for using during the workshop.
 
 Additionally, it pays dividends to get to grips with a text editor that you can access at the command line. In this workshop we'll be going back and forth from the servers to your local machines. If you downloaded your scripts to your local machine, edited them then reuploaded them everytime you wanted to made slight changes you'd soon go mad. It would take a ton of your precious time and you'd likely incur errors going back and forth.
 
 There are several editors that you can run directly on the server. Editing directly on the server is faster because you'll be debugging iteratively.
 
- - `nano filename`. a barebones editor with key bindings similar to notepad. good for small edits. **easiest option**
+ - `nano filename`. a barebones editor with key bindings similar to notepad++. good for small edits. **easiest option**
     - `nano -l filename` shows line numbers.
 	- `nano -z filename` allows suspending the editing with <kbd>CTRL</kbd>+<kbd>z</kbd>
 	- <kbd>CTRL</kbd>+<kbd>o</kbd> to save. <kbd>CTRL</kbd>+<kbd>c</kbd> to cancel, <kbd>CTRL</kbd>+<kbd>x</kbd> to exit.
  - `vim filename`
-    - tutorial: https://computers.tutsplus.com/tutorials/vim-for-beginners--cms-21118
+    - tutorial: [https://computers.tutsplus.com/vim-for-beginners--cms-21118t](https://computers.tutsplus.com/vim-for-beginners--cms-21118t)
     - <kbd>:</kbd><kbd>q</kbd> quits.
 	- `i` enters insert (edit) mode
 	- <kbd>ESC</kbd> exits a mode.
@@ -513,7 +514,7 @@ There are several editors that you can run directly on the server. Editing direc
 	- <kbd>CTRL</kbd>+<kbd>g</kbd> cancels
     - <kbd>CTRL</kbd>+<kbd>x</kbd> <kbd>CTRL</kbd>+<kbd>s</kbd> saves
 
-## 3 - Creating a script
+# 3 - Creating a script
 
  You will be asked to type commands interactively, but in later topics you will be asked to create scripts. Here is an example to create a bash script, which by convention ends with `.sh`.
 
@@ -562,7 +563,7 @@ The solutions are given below. If you feel confident, give them a crack. If you 
 <details>
 <summary markdown="span">**Answer 1**</summary>
 ```bash
-seq 2 2 100 | grep -v 0 | sed 's/2$/2!/g' | grep '!\|3' > exercise_3.txt
+seq 2 2 100 | grep -v 0 | sed 's/2$/2!/g' | grep '!\|3' > exercise_1.txt
    ```
 </details>
 
