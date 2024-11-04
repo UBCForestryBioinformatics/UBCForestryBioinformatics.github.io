@@ -12,7 +12,12 @@ In this session, we will get a conceptual overview of some of the main data type
 
 #### Accompanying material
 [comment]: <> (Using this HTML formatting, the links will pop open in a new page rather than in the same window)
-<a href="https://drive.google.com/file/d/1Hq2b1vuB7GMvlHR1khhGByeUacvrhKEM/view?usp=share_link" target="_blank">Lecture Slides</a>
+<a href="https://drive.google.com/file/d/1VpONjRze_dChBLbZHCE95gdlM7okMGZO/view?usp=drive_link" target="_blank">Lecture Slides</a>
+
+
+<a href="https://drive.google.com/drive/folders/1hD7c0kq6paeW13a8f9mzoUBkc7jT6ImG?usp=drive_link" target="_blank">Additional Papers</a>
+
+
 
 [Download link for the tutorial data](https://drive.google.com/drive/folders/17wNzwy8BWywonhpggyiM17UTagVx8X12?usp=sharing)
 
@@ -94,7 +99,7 @@ Open up IGV on your machine, you should be seeing something like the following (
 
 You may notice "hg19" in the drop down menu on the top left (highlighted in orange). "hg19" stands for human genome version 19, it's fun to explore the human genome, but today we're going to explore the genome of the system we're working with in this workshop .
 
-The first thing to do is to load in our reference genome. From the drop-down menu in the top left, choose the ```Genomes``` menu and choose ```Load Genome From File...```. When the box opens up, navigate to the data you downloaded and choose the ```ReferenceGenome.fasta.gz``` file. The file extension ".fasta.gz" tells us that this is a FASTA file (a simple text file that represents a genetic sequence - DNA, RNA or peptides).
+The first thing to do is to load in our reference genome. From the drop-down menu in the top left, choose the ```Genomes``` menu and choose ```Load Genome From File...```. When the box opens up, navigate to the data you downloaded and choose the ```ReferenceGenome.fasta``` file. The file extension ".fasta.gz" tells us that this is a FASTA file (a simple text file that represents a genetic sequence - DNA, RNA or peptides).
 
 
 IGV is pretty intuitive so you should be able to navigate your way around. Don't hesitate to let us know if you get stuck.
@@ -122,12 +127,8 @@ Files in binary format are often smaller than plain text, and going from binary 
 
 If the data loaded happily, choose a chromosome from the dropdown menu and zoom in to any location in the genome (by double clicking or using the zoom bar in the top right corner). The window should look a little like this:
 
-<details>
-  <summary>Click to expand! </summary>
 
 ![Image](/pages/topic_1_pics/IGV_HiSeq_lowCoverage.png)
-
-</details>
 
 
 We are looking at a graphical representation of the short reads aligned to our reference genome. Illumina technology is amazing, but it is not perfect. Explore the alignment, using your mouse or trackpad, scroll through the alignment and get a feel for navigation in IGV.
@@ -157,7 +158,7 @@ For the next part, we'll need to remove the browser tracks we've opened. This is
 **Before reading in the next file, we'll want to tweak a couple of IGV options.**
 
 1. Using the dropdown menu labelled ```View```  (top of the IGV screen) choose ```Preferences``` and navigate to the ```Third Gen``` tab.
-2. Under ```Hide indels < show indel threshold >``` replace 1 with 3.
+2. Make sure the “Hide indels < show indel threshold” box is checked and change  “Show indel threshold (bases)” to 3
 3. Check the box that says ```Quick consensus mode```
 
 ![Image](/pages/topic_1_pics/OptionsMenu.png)
