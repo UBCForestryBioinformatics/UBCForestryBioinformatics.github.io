@@ -12,8 +12,8 @@ In this session, we will get a conceptual overview of some of the main data type
 
 #### Accompanying material
 [comment]: <> (Using this HTML formatting, the links will pop open in a new page rather than in the same window)
-<a href="https://drive.google.com/file/d/1VpONjRze_dChBLbZHCE95gdlM7okMGZO/view?usp=drive_link" target="_blank">Lecture Slides</a>
 
+[Lecture Slides](/pages/topic_1/Topic_1.pdf)
 
 <a href="https://drive.google.com/drive/folders/1hD7c0kq6paeW13a8f9mzoUBkc7jT6ImG?usp=drive_link" target="_blank">Additional Papers</a>
 
