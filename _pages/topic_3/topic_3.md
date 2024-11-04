@@ -9,7 +9,7 @@ layout: post
 ### Accompanying material
 [Lecture Slides](./Topic_3.pdf)
 
-# Part 1: Overview of sequence data
+# 1: Overview of sequence data
 
 In this exercise, let's pretend that you have been notified that your data is ready for download from the sequence centre. You submitted a short read sequencing library and a long read sequencing library generated using Illumina and PacBio technologies, respectively.
 
@@ -75,7 +75,7 @@ Can you use command line tools to get a count of the number of reads that we hav
 
 Once you've done that, take a look at the contents of each file. How are paired-end reads identified? What information is used to identify read mates?
 
-# Part 2: Read Quality
+# 2: Read Quality
 
 ### Install fastqc
 
@@ -157,4 +157,13 @@ Open that file up in an internet browser and have a look.
 Since we are using simulated data, our data does not have adapters. But taking a look at the signatures of our highly quality reads can help you get a sense of what very high quality data might look like, and additionally,by comparing to your real data, how sequencing technology influences data quality.  
 
 **Discussion Question: our data effectively has had adapters removed from reads and already been trimmed for low quality BPs near the end of reads. what might be the cons of read trimming?**
+
+__________________
+
+# Exercise 2
+
+Let's pretend that a collaborator just got in contact with you. Going through a shel midden they found some mouldy old bones that look kind of like a Chinook Salmon. They managed to extract DNA from these shells and sequenced them. Your collaborator has sequenced the DNA from this mouldy fish and have sent you the FASTQ files. 
+
+For this exercise, take the ```mouldyFish.fastq.gz``` file and run it throught ```fastqc```, download the output an take a look at it on your browser. What differences are there between these reads and those that you looked at earlier?
+
 

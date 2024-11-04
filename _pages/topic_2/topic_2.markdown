@@ -610,7 +610,7 @@ function keys.
 emulators (esp `gnome-terminal`). If you find that the function keys
 don't behave as expected when you're logged in to the server, you
 might have to configure your terminal parameters to pass the correct
-escape codes. This is covered in [Topic 1: finalize tool config](../Topic_1/finalize_tool_config).
+escape codes. 
 
 > *Troubleshoot:* Strange characters pop-up: The font in your terminal
 emulator needs to support unicode characters. The font `Ubuntu Mono`
