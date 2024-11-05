@@ -38,15 +38,6 @@ done
 What do these commands do? Can you use commands like this to find all the kmers in the sequence? 
 
 
-One approach we could use involves variable assignment. Variable assignment is a super powerful part of bash coding. A variable can be used as a shortcut for long path, or it can even contain the output of a command. The notation is as follows:
-
-```bash
-shortpath="/mnt/data/fastq/shortreads/"
-ls $shortpath
-cmdout=`echo "test"`
-echo $cmdout
-```
-
 Think about how you could incorporate some basic algebra and variable assignment to solve this problem.
 
 ```bash
