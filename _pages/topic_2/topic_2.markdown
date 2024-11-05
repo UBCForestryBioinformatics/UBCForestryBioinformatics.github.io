@@ -563,8 +563,11 @@ The solutions are given below. If you feel confident, give them a crack. If you 
 
 <details>
 <summary markdown="span">**Answer 1**</summary>
+
 ```bash
+
 seq 2 2 100 | grep -v 0 | sed 's/2$/2!/g' | grep '!\|3' > exercise_1.txt
+
    ```
 </details>
 

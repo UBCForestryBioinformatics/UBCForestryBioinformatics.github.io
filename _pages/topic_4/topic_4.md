@@ -56,9 +56,9 @@ echo "1+1" | bc
 echo $((1+1))
 ```
 
+
 <details>
-<summary markdown="span">**Answer**
-</summary>
+<summary markdown="span">**Answer**</summary>
 
 ```bash
 for i in {1..52} 
@@ -67,7 +67,6 @@ k=$(($i+8))
 cut -c $i-$k /mnt/data/codebreaks/kmer.fa
 done
 ```
-
 </details>
 
 
@@ -107,18 +106,15 @@ Hint:
 *Can you think why your number is probably an underestimate?*
 
 <details>
-<summary markdown="span">**Answer**
+<summary markdown="span"> **Answer**
 
 ```bash
-
 grep -c my_kmer
 
 # or
 
 grep my_kmer | wc -l
-
 ```
-
 </summary>
 
 
