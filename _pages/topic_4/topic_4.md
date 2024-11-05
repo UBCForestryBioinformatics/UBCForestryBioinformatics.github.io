@@ -95,7 +95,7 @@ Select one of the k-mers from the list you generated above.
 <details>
 <summary markdown="span">**If you didn't finish the above bit click here to get a 9-mer to work with**</summary>
 
-```ATCGCACAA```
+<code>ATCGCACAA</code>
 </details>
 
 With your 9-mer, identify regions of the reference genome that contain that sequence using ```grep```.
@@ -171,8 +171,7 @@ You may have guessed it, but I took the sequence in the ```kmer.fa``` directly f
 
 Your task is to BLAST the sequences for the three reads contained in the file called ```three_reads.fq.gz``` located in ```/mnt/data/codebreaks```. 
 
-First, you will need to convert the FASTQ file to a FASTA file. Remember the structure of these files...
-
+**Step 1: Convert the FASTQ file to a FASTA file. Remember the structure of these files...**
 
 <details>
 <summary markdown="span">**If you're struggling with the file conversion, here's a little helper:**</summary>
@@ -182,19 +181,22 @@ zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~
 
 ## This is just one way of doing it - there are plenty of others. If you came up with a different way, share it with the group!
 
-## dDon't worry if the above is baffling to you - it's a pretty complex line. 
+## Don't worry if the above is baffling to you - it's a pretty complex line. 
 ## If you're struggling with it, try taking it apart piece by piece to see what it's doing...
 
 ```
 
 </details>
 
-Once you have a FASTA file, you can query it against the BLAST database as we did before. Do you find matches now? Do they look reliable? 
+
+**Step 2: Query your new FASTA file against the BLAST database**
+
+Do you find matches now? Do they look reliable? 
 
 How long does it take to BLAST one of those files against the Salmon reference genome?
 
 
-Hint:
+*Hint*:
   * Prepending the ```time``` program to your lines is a neat way of getting timings from Unix commands
 
 ______________
