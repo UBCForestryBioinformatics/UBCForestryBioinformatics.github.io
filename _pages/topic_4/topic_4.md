@@ -126,7 +126,7 @@ What would we do next? Perhaps we should build alignments around these matching 
 
 ### NCBI BLAST
 
-The **B**asic **A**lignment **S**earch **T**ool (**BLAST**) is one of the cornerstones of modern biology. Having a search engine with which to query any sequence against a database of all publicly available sequences is tremendous. BLAST has had a profound effect on biology - the original paper describing the tool has more than 100,000 citations!  
+The **B**asic **L**ocal **A**lignment **S**earch **T**ool (**BLAST**) is one of the cornerstones of modern biology. Having a search engine with which to query any sequence against a database of all publicly available sequences is tremendous. BLAST has had a profound effect on biology - the original paper describing the tool has more than 100,000 citations!  
 
 First, let's format the ```SalmonReference.fasta``` as a Blast Database...
 
