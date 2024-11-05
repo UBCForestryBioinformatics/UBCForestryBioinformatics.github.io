@@ -93,8 +93,8 @@ cp /mnt/data/assemblies/SalmonReference.fasta ~/ ## this will copy the reference
 Select one of the k-mers from the list you generated above.  
 
 <details>
-<summary markdown="span">**If you didn't finish the above bit click here to get a 9-mer to work with**
-</summary>
+<summary markdown="span">**If you didn't finish the above bit click here to get a 9-mer to work with**</summary>
+
 ```ATCGCACAA```
 </details>
 
@@ -106,7 +106,7 @@ Hint:
 *Can you think why your number is probably an underestimate?*
 
 <details>
-<summary markdown="span"> **Answer**
+<summary markdown="span"> **Answer**</summary>
 
 ```bash
 grep -c my_kmer
@@ -175,8 +175,7 @@ First, you will need to convert the FASTQ file to a FASTA file. Remember the str
 
 
 <details>
-<summary markdown="span">**If you're struggling with the file conversion, here's a little helper:**
-</summary>
+<summary markdown="span">**If you're struggling with the file conversion, here's a little helper:**</summary>
 
 ```bash
 zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~4p'  > OUTFILE.fasta
