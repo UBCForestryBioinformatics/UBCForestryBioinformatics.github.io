@@ -66,7 +66,7 @@ In this workshop we make use of simulated datasets for all of the tutorials and 
 
 The GitHub page for Chinook is here: https://github.com/TBooker/Chinook
 
-** Obtaining all the files on this site **
+### Obtaining all the files on this site
 
 You may use your internet connection to browse this site, or you may download the entirety of the files on the site in one constantly updated zip archive here
 
@@ -74,14 +74,14 @@ This method dosesn’t require git, however, you’ll have to manually update th
 
 To obtain to all the files via git, type:
 
-git clone https://github.com/UBC-biol525D/UBC-biol525D.github.io.git
-To update the all the files at any point in the future, change to the biol525D directory that was created by the previous command and type:
+```git clone https://github.com/UBCForestryBioinformatics/UBCForestryBioinformatics.github.io```
+To update the all the files at any point in the future, change to the directory that was created by the previous command and type:
 
-git pull
+```git pull```
 Use and modification of these resources
 You may use any of the materials provided here, and modify them in any way, provided there is appropriate attribution according the license found below and included with this project.
 
-** License and Copyright **
+### License and Copyright
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package. If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
 
@@ -107,5 +107,5 @@ Modified work (c) 2022 Tom Booker, Julia Kreiner
 </details>
 
 
-About this site:
-This site is powered by GithubPages, and the code backing it is on GitHub here.
+### About this site:
+This site is powered by GithubPages, and the code backing it is here: [[https://github.com/UBCForestryBioinformatics/UBCForestryBioinformatics.github.io](https://github.com/UBCForestryBioinformatics/UBCForestryBioinformatics.github.io)
