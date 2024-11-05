@@ -103,7 +103,6 @@ With your 9-mer, identify regions of the reference genome that contain that sequ
 
 Hint:
   * Try looking at the options for ```grep``` - or try piping the output into ```wc```
-  {: .spoiler}
 
 *Can you think why your number is probably an underestimate?*
 
@@ -202,7 +201,6 @@ How long does it take to BLAST one of those files against the Salmon reference g
 
 Hint:
   * Prepending the ```time``` program to your lines is a neat way of getting timings from Unix commands
-    {: .spoiler}
 
 ______________
 
