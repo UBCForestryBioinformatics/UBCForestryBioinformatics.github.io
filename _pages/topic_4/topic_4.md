@@ -10,7 +10,7 @@ layout: post
 [Lecture Slides](/pages/topic_4/Topic_4.pdf)
 
 
-# 1. k-mers  
+# 1 - k-mers  
 
 1. Write a one liner to find all the overlaps (i.e. the beginning or the end) exactly 4bp in length between CTCTAGGCC and a list of other sequences in the file /mnt/data/codebreaks/overlaps.fa
 
@@ -75,7 +75,7 @@ done
 ______________
 
 
-## 2. Nucleotide Alignment
+# 2 - Nucleotide Alignment
 
 ### Exact matches
 
@@ -168,7 +168,7 @@ Did you find a good match?
 
 ______________
 
-## Excercise 
+# Excercise 
 
 ### Aligning short reads using BLAST
 
