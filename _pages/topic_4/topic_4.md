@@ -177,36 +177,51 @@ You may have guessed it, but I took the sequence in the ```kmer.fa``` directly f
 
 Your task is to BLAST the sequences for the three reads contained in the file called ```three_reads.fq.gz``` located in ```/mnt/data/codebreaks```. 
 
-**Step 1: Convert the FASTQ file to a FASTA file. Remember the structure of these files...**
+### Step 1: Convert the FASTQ file to a FASTA file. Remember the structure of these files...
 
+<br>
 <details>
 <summary markdown="span">**If you're struggling with the file conversion, here's a little helper:**</summary>
 
-<code>
-zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~4p'  > OUTFILE.fasta
 
-## This is just one way of doing it - there are plenty of others. If you came up with a different way, share it with the group!
+<code>zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~4p'  > OUTFILE.fasta</code>
 
-## Don't worry if the above is baffling to you - it's a pretty complex line. 
-## If you're struggling with it, try taking it apart piece by piece to see what it's doing...
+Don't worry if the above is baffling to you - it's a pretty complex line. This is just one way of doing it - there are plenty of others. If you came up with a different way, share it with the group!  If you're struggling with it, try taking it apart piece by piece to see what it's doing...
 
-</code>
 
 </details>
 
 
-**Step 2: Query your new FASTA file against the BLAST database**
+<details>
+  <summary>Click me</summary>
+  
+  ### Heading
+  1. Foo
+  2. Bar
+     * Baz
+     * Qux
 
-Do you find matches now? Do they look reliable? 
+  ### Some Javascript
+  ```js
+  function logSomething(something) {
+    console.log('Something', something);
+  }
+  ```
+</details>
+_______________
 
-How long does it take to BLAST one of those files against the Salmon reference genome?
+### Step 2: Query your new FASTA file against the BLAST database
+
+Do you find matches now? Do they look reliable? How long does it take to BLAST one of those files against the Salmon reference genome?
 
 <br>
 
 *Hint*:
   * Prepending the ```time``` program to your lines is a neat way of getting timings from Unix commands
 
-______________
+_______________
+
+### Step 3: How long would it take to map many more short reads?
 
 Would this is a feasible strategy for mapping short reads from a whole-genome-sequencing experiment? 
 
