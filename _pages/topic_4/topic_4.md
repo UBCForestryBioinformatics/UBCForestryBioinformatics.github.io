@@ -115,7 +115,7 @@ grep -c my_kmer
 
 grep my_kmer | wc -l
 ```
-</summary>
+</details>
 
 
 
