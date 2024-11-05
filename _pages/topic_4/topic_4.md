@@ -105,7 +105,7 @@ Hint:
   * Try looking at the options for ```grep``` - or try piping the output into ```wc```
   {: .spoiler}
 
-*Can you think why your number is probably an underestimate?
+*Can you think why your number is probably an underestimate?*
 
 <details>
 <summary markdown="span">**Answer**
