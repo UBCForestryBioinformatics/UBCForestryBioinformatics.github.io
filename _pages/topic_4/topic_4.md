@@ -210,5 +210,3 @@ Would this is a feasible strategy for mapping short reads from a whole-genome-se
 
 For many eukaryotes, with genomes that are >10-100 times the size of the simulated genome we're working with here, we would have that many more sequencing reads for comparable coverage as well as a larger reference genome to compare to. To sequence the human genome (approximately 3Gbp) to 30x coverage with 150bp paired end reads, how many reads would you need? How long would it take to map these using BLAST? Can you make a (very) rough estimate with your commands above?
 
-
-
