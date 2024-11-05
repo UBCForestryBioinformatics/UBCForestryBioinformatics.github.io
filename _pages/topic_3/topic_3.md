@@ -7,9 +7,10 @@ layout: post
 ---
 
 ### Accompanying material
-[Lecture Slides](./Topic_3.pdf)
 
-# 1: Overview of sequence data
+[Lecture Slides](/pages/topic_3/Topic_3.pdf)
+
+# 1 - Overview of sequence data
 
 In this exercise, let's pretend that you have been notified that your data is ready for download from the sequence centre. You submitted a short read sequencing library and a long read sequencing library generated using Illumina and PacBio technologies, respectively.
 
@@ -75,7 +76,7 @@ Can you use command line tools to get a count of the number of reads that we hav
 
 Once you've done that, take a look at the contents of each file. How are paired-end reads identified? What information is used to identify read mates?
 
-# 2: Read Quality
+# 2 - Read Quality
 
 ### Install fastqc
 
@@ -95,7 +96,7 @@ cd qualityControl
 fastqc ${shortreads}/*fastq.gz ${longreads}/*fastq.gz -o ./
 ```
 
-*Oh no!* `FastQC` threw an error. If you read the error message it looks like it uses Java and that Java has been updated since then. I guess this would be a good chance to try downloading a package from the internet.
+*Oh no!* `FastQC` was not found!If you read the error message it looks FASTQC has not been installed on these servers. I guess this would be a good chance to try downloading a package from the internet.
 
 The first thing you need is the address of the most recent version of `fastqc`. If you navigate the program's website, you'll find several download links when you click "Download Now":
 [https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
@@ -110,13 +111,16 @@ wget <insert copied link here>
 # This should have downloaded a zipped file called something like fastqc_v0.11.9.zip
 
 # To unzip just run:
-unzip fastqc_v0.11.9.zip
+unzip fastqc_v0.11.9.zip ## Note that the version umber has probably changed...
 
 # This will have made a directory, go into it:
 cd FastQC
 
-## Make the fastqc file executable:
+## If you get the following message, FASTQC is not executable:
 Can't exec "java": No such file or directory at ./fastqc line 350.
+
+## You can change that using:
+chmod +x fastqc
 
 ```
 
@@ -145,6 +149,11 @@ cd qualityControl
 #summarise into a single report
 multiqc ./
 ```
+
+If the above looked like it ran happily, logout of your current session by writing:
+```logout```
+
+
 Download the output of multiqc run as follows:
 
 ```bash
