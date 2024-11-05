@@ -59,14 +59,13 @@ echo $((1+1))
 
 <details>
 <summary markdown="span">**Answer**</summary>
-
-```bash
+<code>
 for i in {1..52} 
-do 
-k=$(($i+8))
-cut -c $i-$k /mnt/data/codebreaks/kmer.fa
-done
-```
+  do 
+    k=$(($i+8))
+    cut -c $i-$k /mnt/data/codebreaks/kmer.fa
+  done
+</code>
 </details>
 
 
@@ -98,26 +97,34 @@ Select one of the k-mers from the list you generated above.
 <code>ATCGCACAA</code>
 </details>
 
+<br>
+<br>
+<br>
+
 With your 9-mer, identify regions of the reference genome that contain that sequence using ```grep```.
 
+<br>
+*Can you think why your number is probably an underestimate?*
+<br>
 Hint:
   * Try looking at the options for ```grep``` - or try piping the output into ```wc```
 
-*Can you think why your number is probably an underestimate?*
 
 <details>
 <summary markdown="span"> **Answer**</summary>
 
-```bash
+<code>
 grep -c my_kmer
 
 # or
 
 grep my_kmer | wc -l
-```
+</code>
 </details>
 
 
+<br>
+<br>
 
 Ok, great. So we've found parts of the genome where our 9-mer is present. Is this an efficient way to build alignments? Why not? What could go wrong?
 
@@ -141,7 +148,6 @@ cd Tutorial_4
 # This should take a couple of seconds and have generated the following eight files: 
 ###   SalmonBlast.ndb  SalmonBlast.nin  SalmonBlast.not  SalmonBlast.ntf
 ###   SalmonBlast.nhr  SalmonBlast.njs  SalmonBlast.nsq  SalmonBlast.nto
-
 
 ```
 
@@ -176,7 +182,7 @@ Your task is to BLAST the sequences for the three reads contained in the file ca
 <details>
 <summary markdown="span">**If you're struggling with the file conversion, here's a little helper:**</summary>
 
-```bash
+<code>
 zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~4p'  > OUTFILE.fasta
 
 ## This is just one way of doing it - there are plenty of others. If you came up with a different way, share it with the group!
@@ -184,7 +190,7 @@ zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~
 ## Don't worry if the above is baffling to you - it's a pretty complex line. 
 ## If you're struggling with it, try taking it apart piece by piece to see what it's doing...
 
-```
+</code>
 
 </details>
 
@@ -195,6 +201,7 @@ Do you find matches now? Do they look reliable?
 
 How long does it take to BLAST one of those files against the Salmon reference genome?
 
+<br>
 
 *Hint*:
   * Prepending the ```time``` program to your lines is a neat way of getting timings from Unix commands
