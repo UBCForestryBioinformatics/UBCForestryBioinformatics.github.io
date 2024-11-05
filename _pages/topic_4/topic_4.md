@@ -191,23 +191,6 @@ Don't worry if the above is baffling to you - it's a pretty complex line. This i
 
 </details>
 
-
-<details>
-  <summary>Click me</summary>
-  
-  ### Heading
-  1. Foo
-  2. Bar
-     * Baz
-     * Qux
-
-  ### Some Javascript
-  ```js
-  function logSomething(something) {
-    console.log('Something', something);
-  }
-  ```
-</details>
 _______________
 
 ### Step 2: Query your new FASTA file against the BLAST database
