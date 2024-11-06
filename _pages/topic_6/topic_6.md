@@ -9,16 +9,18 @@ layout: post
 
 ### Accompanying material
 
-* [Slides](./Topic_6.pdf)
+[Lecture Slides](/pages/topic_6/topic_6.pdf)
 
 __________________________________
 
+# 0. Setting up
 
 In this tutorial we are going to do the following:
 
 1. Align the RNAseq data to the reference
 2. Obtain counts of the reads mapping to genes in the Salmon genome
 3. Test for differential gene expression between fish from warm and cold parts of the river - This last step will be done in Rstudio
+
 
 We have data for 12 fish, 6 from each location in the river.
 
@@ -51,7 +53,7 @@ We've got paired end reads, so there's two fastq files per sample. The samples a
 
 We will use the splice-aware RNA read aligner STAR. As mentioned in the lecture, STAR performs well under default parameter settings. For this tutorial, we will not have time to tinker with alignment settings, we will just use the program defaults.
 
-## Install and locate relevant software
+### Install and locate relevant software
 
 We have preinstalled STAR on each of the servers, but if you were to do this yourself you can follow the easy instructions on the STAR GitHub page ([https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)).
 
@@ -77,14 +79,14 @@ emacs .bashrc  # I like emacs, but use whichever text editor you prefer
 ```
 
 When in your text editor, add the following text and save the file:
-```
+```bash
 echo "Hello, you are cool!"
 export PATH="/mnt/software/STAR-2.7.10a_alpha_220818/source/:$PATH"
 ```
 
 To get your operating system to work with the new instructions you've given it you can refresh your terminal session using the following command:
 
-```
+```bash
 source ~/.bashrc
 ```
 This command just reloads the configuration file you've just edited. You can also accomplish this by logging out and logging back in.
@@ -93,13 +95,13 @@ There are a couple of things here that we have not covered so far. One is the sh
 
 Now check that it worked:
 
-```
+```bash
 STAR --help
 
 ```
 That should access the STAR executable and print a bunch of help text to the screen.
 
-## Build a genome index
+### Build a genome index
 
 Now that we have STAR up and running, the first thing we'll need to do is build an index for the reference genome so that we can align our reads to it. Building an index is necessary for many bioinformatic operations. It is not dissimilar to the index of a book that tells you where to find certain topics or key wrods. In the case of a genomic index, one builds a record of where you find certain sequences. That makes looking through the genome much more efficient.
 
@@ -126,7 +128,7 @@ This takes about half a minute to run on 2 threads. Each VM has a maximum of 16 
 Inspect the output of this step. Can you see any cause for concern?
 
 When I run this, I get the following error message in the output of the program:
-```
+```bash
 !!!!! WARNING: --genomeSAindexNbases 14 is too large for the genome size=10000000, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 10
 ```
 
@@ -152,7 +154,7 @@ STAR --runThreadN 2 \ # The number of threads to spawn this process on
 That will have hopefully run with no issues!
 
 
-## Map RNA-seq reads
+### Map RNA-seq reads
 
 Now we've built our index, we can map our reads to the reference genome.
 
@@ -183,18 +185,19 @@ cold_sample_04.Log.out # The overall log of the alignment run
 ```
 
 
-### Challenge 1
+# Challenge 1
 The above mapped reads for a single sample. We need to repeat the above but for all samples that we have data for. Can you think of a way to run the above for all the samples we have data for that does not involve manually typing each one in?
 
 
-# Obtain raw read counts
+### Obtain raw read counts
 
 Now we have BAM files for each sample we'll need to count the number of reads associated with each gene.
 
 To obtain counts of reads we will use the `htseq-count` tool. This is a popular and very handy tool that can be used to obtain counts of RNA seq reads that have been mapped to a genome.
 
 `htseq-count` sends its list of read counts to STDOUT, so you need to capture it with a redirect if you want to save the output
-```
+
+```bash
 htseq-count -s no \
             -r pos \
             -t exon \ # What type of feature will our data have mapped to?
@@ -208,18 +211,18 @@ Inspect the contents of `cold_sample_07.read_counts.txt`. It should be fairly ob
 
 HTSeq-count also includes some summary stats at the bottom of the file. Let's clip those off before we move on...
 
-```
+```bash
 grep -v "^_" cold_sample_07.read_counts.txt > cold_sample_07.read_counts.clipped.txt
 
 ```
 
 
-## Differential Expression Analysis with DESeq2
+# 2. Differential Expression Analysis with DESeq2
 
 Differential expression analysis can be quite a complicated statistical analysis. Many people choose to use packages specifically designed for the analysis of expression data. For example, the program `DESeq2` is very widely used.
 
 In this directory, I've included a script that does a differential expression analysis of the RNAseq data we have just aligned to the genome using DESeq2.
 
-[Here's a link to that script](./Tutorial_diffExpression.R)
+[Here's a link to that script](/pages/topic_6/Tutorial_diffExpression.R)
 
 This is an R script. Running this script requires the use of particular R packages. For today, we'll work through the analysis as a group. By the end of the week you'll have had some exposure to analyses in R, so it would be good to revisit this analysis once you've done that.
