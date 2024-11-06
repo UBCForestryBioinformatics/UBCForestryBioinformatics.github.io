@@ -8,10 +8,12 @@ layout: post
 
 ### Accompanying material
 
-* [Slides](./Topic_5.pdf)
+[Lecture Slides](/pages/topic_7/Topic_7.pdf)
 
 
-Today we're going to align sequence data to a reference genome using BWA and explore what a BAM file is.
+# 1. Indexing Reference Genome
+
+Today we're going to align sequence data to a reference genome using BWA and explore what a BAM file is. As we saw in the genome assembly tutorial, the assembled genomes that we contstructed all have pros and cons. For the sake of this workshop, let's go ahead and use the ground genome. 
 
 Let's set up a directory structure so the resulting files will be organized and copy the raw data to your home directory.
 
@@ -21,7 +23,7 @@ Let's set up a directory structure so the resulting files will be organized and 
 cd ~
 
 # Copy the reference genome to your working directory
-cp -r /mnt/data/fasta ./
+cp -r /mnt/data/assemblies/SalmonReference.fasta ./
 
 # Copy the fastq files to your working directory
 cp -r /mnt/data/fastq/GWAS_samples/ ./
@@ -31,7 +33,7 @@ mkdir bam
 ```
 We are going to work with the true genome of the species that you explored yesterday because we have limited time. However, can you think of how the choice of assembly would affect the mapping of our data?
 
-First let's index our reference genome.
+Now, let's go ahead and index our reference genome.
 
 ```bash
 # Index the references for BWA.
@@ -40,14 +42,15 @@ bwa index fasta/SalmonReference.fasta
 
 ```
 
-Now finally we can run BWA and align our short read data.
+Great! We can now run BWA and align our short read data.
 
-Using the approach 1 genome assembly:
+# 2. Map Short Reads Using BWA
 
+With our newly index reference genome, let's now go about mapping short reads to the genome.
 
 ```bash
-
-bwa mem \ # We have installed BWA on the VMs, but that might not always be the case
+# We have installed BWA on the VMs, so you don't need to specify the path
+bwa mem \
   fasta/SalmonReference.fasta \
   GWAS_samples/Salmon.p1.3.i1.400000_R1.fastq.gz \
   GWAS_samples/Salmon.p1.3.i1.400000_R2.fastq.gz \
@@ -103,6 +106,8 @@ The option `-S` when running less chops lines that are longer than the page. Thi
 3. What are three possible reasons why mapping quality could be low for a particular read?
 
 ____________________________
+
+# 3. Inspect BAM File with SAMTools
 
 At this point we'll introduce a very useful - and incredibly widely used - piece of software called `samtools`. As the name suggests, `samtools` is a program for working with SAM/BAM files.
 
@@ -176,7 +181,7 @@ Another useful summary that `samtools` can produce very quickly is coverage stat
 
 
 
-## Exercise
+# Exercise
 
 
 A bash script is a plain text file (i.e. not rich text, nor a word doc) which contains bash commands. You can create the file on your computer and copy it over, or you can edit it directly from the server with one of the installed editors (this is covered in [topic 2, Editing](../Topic_2/#editing). The name of the file is up to you, but bash scripts are given the `.sh` extension by convention.
