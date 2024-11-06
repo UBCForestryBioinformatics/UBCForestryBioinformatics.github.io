@@ -174,6 +174,9 @@ STAR --genomeDir location_to_save_index/ \ # This tells STAR where we've put the
 ```
 You can use multiple threads when aligning reads with STAR too. When you're working with full sized datasets that will for sure come in handy, but with the data we are working with that's not a big issue. Mapping the reads using a two threads takes about a minute per sample.
 
+**Note that more recent versions of STAR may throw an error telling you that the program has not been allocated enough RAM. Go through the error message, can you fix the issue?**
+
+
 
 If the program ran successfully, it should have produced several files:
 ```
