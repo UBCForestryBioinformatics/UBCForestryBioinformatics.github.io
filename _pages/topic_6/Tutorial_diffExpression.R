@@ -1,11 +1,15 @@
 rm(list=ls())
+
+## Commented out because I've already installed the program
+
 #source("http://bioconductor.org/biocLite.R")
 #BiocManager::install("DESeq2")
+
 library("DESeq2")
 
-directory <- "~/UBC/ZoologyStuff/BIOL525D/Topic_X_RNA/read_counts/"
+# Set working directory - This will be different on your machine
+directory <- "~/Desktop/read_counts/"
 setwd(directory)
-
 
 # Set the prefix for each output file name
 outputPrefix <- "RNA_tutorial"
@@ -38,11 +42,13 @@ sampleNames<- c("sample_01",
                 "sample_11",
                 "sample_12")
 
-# A simple little function to generate
-sampleCondition <- c(rep(c("warm","cold"), 6))
+# A list of treatments
+sampleCondition <- c(rep("warm", 6),rep("cold", 6))
 
+# Combine the sample info into a table for DESeq
 sampleTable <- data.frame(sampleName = sampleNames, fileName = sampleFiles, condition = sampleCondition)
 
+# A list of the factors for a future dataframe
 treatments = c("warm","cold")
 
 
@@ -52,6 +58,7 @@ ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable,
                                        directory = directory,
                                        design = ~ condition)
 
+# Estimate size factors - normalize read counts
 dds <- estimateSizeFactors(ddsHTSeq)
 
 # Take a look at the raw counts
@@ -59,55 +66,39 @@ View(counts(ddsHTSeq))
 # Take a look at the normalised counts
 View(counts(dds, normalized=TRUE))
 
-str(ddsHTSeq)
+##########################################
 
+# Convert treatment into factors
 colData(ddsHTSeq)$condition <- factor(colData(ddsHTSeq)$condition,
                                       levels = treatments)
 
 
-#guts
+# The guts of the analysis - run the DESeq2 GLM on the count data
 dds <- DESeq(ddsHTSeq)
+
 res <- results(dds)
+# Make a simple volcano plot
 plot(res$log2FoldChange, -log10(res$padj))
 
-# copied from: https://benchtobioinformatics.wordpress.com/category/dexseq/
-# order results by padj value (most significant to least)
-res= subset(res, padj<0.05)
-res <- res[order(res$padj),]
+library(ggplot2)
 
+res_DF <- data.frame(res)
 
+# A quick Volcano plot
+ggplot(data = res_DF, aes( y = -log10(padj), x = log2FoldChange, fill = abs(log2FoldChange)))+
+  geom_point(shape = 16)+
+  geom_point(shape = 21)+
+  scale_fill_gradient(low="white",high = "red")+
+  theme_bw()
 
-# save data results and normalized reads to csv
-resdata <- merge(as.data.frame(res), as.data.frame(counts(dds,normalized =TRUE)), by = 'row.names', sort = FALSE)
-names(resdata)[1] <- 'gene'
-write.csv(resdata, file = paste0(outputPrefix, "-results-with-normalized.csv"))
+# A quick Volcano plot - log10 the y-axis
+ggplot(data = res_DF, aes( y = -log10(padj), x = log2FoldChange, fill = abs(log2FoldChange)))+
+  geom_point(shape = 16)+
+  geom_point(shape = 21)+
+  scale_fill_gradient(low="white",high = "red")+
+  scale_y_log10()+
+  theme_bw()
 
-
-
-# produce DataFrame of results of statistical tests
-mcols(res, use.names = T)
-write.csv(as.data.frame(mcols(res, use.name = T)),file = paste0(outputPrefix, "-test-conditions.csv"))
-
-
-
-ddsClean <- replaceOutliersWithTrimmedMean(dds)
-ddsClean <- DESeq(ddsClean)
-tab <- table(initial = results(dds)$padj < 0.05,
-             cleaned = results(ddsClean)$padj < 0.05)
-addmargins(tab)
-write.csv(as.data.frame(tab),file = paste0(outputPrefix, "-replaceoutliers.csv"))
-resClean <- results(ddsClean)
-resClean = subset(res, padj<0.05)
-resClean <- resClean[order(resClean$padj),]
-write.csv(as.data.frame(resClean),file = paste0(outputPrefix, "-replaceoutliers-results.csv"))
-
-
-# MA plot of RNAseq data for entire dataset
-# http://en.wikipedia.org/wiki/MA_plot
-# genes with padj < 0.1 are colored Red
-plotMA(dds, ylim=c(-8,8),main = "RNAseq experiment")
-dev.copy(png, paste0(outputPrefix, "-MAplot_initial_analysis.png"))
-dev.off()
 
 
 # transform raw counts into normalized values
@@ -115,41 +106,6 @@ dev.off()
 # variance stabilization is very good for heatmaps, etc.
 rld <- rlogTransformation(dds, blind=T)
 vsd <- varianceStabilizingTransformation(dds, blind=T)
-
-# save normalized values
-write.table(as.data.frame(assay(rld),file = paste0(outputPrefix, "-rlog-transformed-counts.txt"), sep = '\t'))
-write.table(as.data.frame(assay(vsd),file = paste0(outputPrefix, "-vst-transformed-counts.txt"), sep = '\t'))
-
-# plot to show effect of transformation
-# axis is square root of variance over the mean for all samples
-par(mai = ifelse(1:4 <= 2, par('mai'),0))
-px <- counts(dds)[,1] / sizeFactors(dds)[1]
-ord <- order(px)
-ord <- ord[px[ord] < 150]
-ord <- ord[seq(1,length(ord),length=50)]
-last <- ord[length(ord)]
-vstcol <- c('blue','black')
-matplot(px[ord], cbind(assay(vsd)[,1], log2(px))[ord, ],type='l', lty = 1, col=vstcol, xlab = 'n', ylab = 'f(n)')
-legend('bottomright',legend=c(expression('variance stabilizing transformation'), expression(log[2](n/s[1]))), fill=vstcol)
-dev.copy(png,paste0(outputPrefix, "-variance_stabilizing.png"))
-dev.off()
-
-
-
-# clustering analysis
-# excerpts from http://dwheelerau.com/2014/02/17/how-to-use-deseq2-to-analyse-rnaseq-data/
-library("RColorBrewer")
-library("gplots")
-distsRL <- dist(t(assay(rld)))
-mat <- as.matrix(distsRL)
-rownames(mat) <- colnames(mat) <- with(colData(dds), paste(condition, sampleNames, sep=" : "))
-
-#Or if you want conditions use:
-#rownames(mat) <- colnames(mat) <- with(colData(dds),condition)
-hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-dev.copy(png, paste0(outputPrefix, "-clustering.png"))
-heatmap.2(mat, trace = "none", col = rev(hmcol), margin = c(13,13))
-dev.off()
 
 #Principal components plot shows additional but rough clustering of samples
 library("genefilter")
