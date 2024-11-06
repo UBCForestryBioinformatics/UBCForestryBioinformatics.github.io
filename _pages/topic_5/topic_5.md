@@ -10,7 +10,7 @@ layout: post
 # Accompanying material
 
 
-[Lecture Slides](/pages/topic_5/Topic_5.pdf)
+[Lecture Slides](/pages/topic_5/topic_5.pdf)
 
 
 Programming Resources (in this tutorial or from lecture)
