@@ -7,9 +7,12 @@ layout: post
 ---
 
 ## Accompanying material
-* [Slides](./VariantCalling 2021.pdf)
+[Lecture Slides](/pages/topic_8/topic_8.pdf)
 
 In this tutorial we're going to call SNPs with GATK.
+
+
+# 1. Setup Environment
 
 The first step is again to set up directories to put our incoming files.
 ```bash
@@ -25,8 +28,8 @@ mkdir bams
 We also have a few programs we're going to use. Since we will be calling them repeatedly, we're going to save their full paths asv ariable. This will only last for the current session so if you log out you'll have to set them up again.
 
 ```bash
-gatk=/mnt/software/gatk-package-4.2.2.0-local.jar
-picard=/mnt/software/picard.jar
+gatk=/mnt/bin/gatk-4.2.6.0/gatk-package-4.2.6.0-local.jar 
+picard=/mnt/bin/picard.jar
 ```
 
 There are 4 different samples we will mapping today - 4 individuals [i1, i2, i8, i9] from 1 population [p1]) 
@@ -34,10 +37,10 @@ There are 4 different samples we will mapping today - 4 individuals [i1, i2, i8,
 We're going to have to run multiple steps on each sample, so to make this easier, we make a list of all the sample names.
 
 In case you didn't finish last tutorial, and since we have some extra bams you didn't generate, copy the \*bam files and their index (\*.bai) to your newly generated ~/bams directory 
-(`cp /mnt/data/bams/Chinook.p1.i[1-2,8-9].rg.bam ~/bams/`).
+(`cp /mnt/data/bams/SalmonSim.p1.3.i[1-2,8-9].400000.sort.bam ~/bams/`).
 
 ```bash
-ls bams/ | grep .rg.bam$ | sed s/.rg.bam//g  > samplelist.txt
+ls bams/ | grep .400000.sort.bam$ | sed s/.400000.sort.bam//g  > samplelist.txt
 
 ```
 Lets break this down. 
@@ -51,6 +54,9 @@ Lets break this down.
 **> samplelist.txt** <= Save the result in a file named _samplelist.txt_
 
 
+# 2. Mark Duplicates
+
+
 The first step is to mark duplicate reads using picardtools - this is important because we wouldn't expect to find reads that are exactly identical (the same sequence, with the same start and end positions) unless it resulted from PCR amplification. We don't want to infer genome-wide variation with removing this pseudoreplicated data. If you were using GBS data you wouldn't want to do this step.
 
 ```bash
@@ -60,14 +66,16 @@ The first step is to mark duplicate reads using picardtools - this is important 
 
 while read name; do
   java -jar $picard MarkDuplicates \
-  I=~/bams/$name.rg.bam O=~/bams/$name.sort.dedup.bam \
+  I=~/bams/$name.400000.sort.bam O=~/bams/$name.sort.dedup.bam \
   M=log/$name.duplicateinfo.txt
-  samtools index bams/$name.sort.dedup.bam
+  samtools index ~/bams/$name.sort.dedup.bam
 done < samplelist.txt
 
 ```
 
 Now in the bam files duplicate reads are flagged. Take a look in the log directory, which sample has the highest number of duplicate reads?
+
+# 3. Run HaplotypeCaller on each sample
 
 
 To use GATK, we have to index our reference genome. An index is a way to allow rapid access to a very large file. For example, it can tell the program that the third chromosome starts at bit 100000, so when the program wants to access that chromosome it can jump directly there rather than scan the whole file (we've already done this for our bam files --> .bai) . Some index files are human readable (like .fai files) while others are not.
@@ -78,11 +86,11 @@ cp /mnt/data/fasta/SalmonReference.fasta ~/ref/ #copy the reference to our local
 
 #two types of references are needed - a sequence dictionary:
 java -jar $picard CreateSequenceDictionary \
-  R=~/ref/SalmonReference.fasta \
-  O=~/ref/SalmonReference.dict
+  R=~/fasta/SalmonReference.fasta \
+  O=~/fasta/SalmonReference.dict
 
 #and a .fai file
-samtools faidx ~/ref/SalmonReference.fasta #column 1 = chromsome number, c2 = length, c3 = cumulative position where contig seq begins (i.e. is not missing)
+samtools faidx ~/fasta/SalmonReference.fasta #column 1 = chromsome number, c2 = length, c3 = cumulative position where contig seq begins (i.e. is not missing)
 ```
 Take a look at the ref/SalmonReference.fasta.fai. How many chromosomes are there and how long is each? 
 
@@ -91,50 +99,57 @@ Take a look at the ref/SalmonReference.fasta.fai. How many chromosomes are there
 The next step is to use GATK to create a GVCF file for each sample. This file summarizes support for reference or alternate alleles at all positions in the genome *for each individual*. It's an intermediate file we need to use before we create our final, population-level VCF file.
 
 This step can take a few minutes so lets first test it with a single sample to make sure it works.
-```
+
+```bash
 #note the approach we'll use for variable assignment in our for loop 
 #` .. ` tells bash to take the output of this command (in this case to use as a values for "name" in the for loop)
 
 for name in `cat ~/samplelist.txt | head -n +1 ` 
-do 
-java -Xmx10g -jar $gatk HaplotypeCaller \
--R ~/ref/SalmonReference.fasta \
---native-pair-hmm-threads 2 \
--I ~/bams/$name.sort.dedup.bam \
--ERC GVCF \
--O ~/gvcf/$name.sort.dedup.g.vcf
-done
+  do 
+   java -Xmx10g -jar $gatk HaplotypeCaller \
+    -R ~/fasta/SalmonReference.fasta \
+    --native-pair-hmm-threads 2 \
+    -I ~/bams/$name.sort.dedup.bam \
+    -ERC GVCF \
+    -O ~/gvcf/$name.sort.dedup.g.vcf
+  done
 ```
- Check your gvcf file to make sure it has a .idx index file. If the haplotypecaller crashes, it will produce a truncated gvcf file that will eventually crash the genotypegvcf step. Note that if you give genotypegvcf a truncated file without a idx file, it will produce an idx file itself, but it still won't work.
+ 
+Check your gvcf file to make sure it has a .idx index file. If the haplotypecaller crashes, it will produce a truncated gvcf file that will eventually crash the genotypegvcf step. Note that if you give genotypegvcf a truncated file without a idx file, it will produce an idx file itself, but it still won't work.
 
 We would run the HaplotypeCaller on the rest of the samples, but that will take too much time, so once you're satisfied that your script works, you can copy the rest of the gvcf files (+ idx files) from `/mnt/data/gvcf` into `~/gvcf`.
 
 
 The next step is to import our gvcf files into a genomicsDB file. This is a compressed database representation of all the read data in our samples. It has two important features to remember:
+
 1. Each time you call GenomicsDBImport, you create a database for a single interval. This means that you can parallelize it easier, for example by calling it once per chromosome.
+
 2. The GenomicsDB file contains all the information of your GVCF files, but can't be added to, and can't be back transformed into a gvcf. That means if you get more samples, you can't just add them to your genomicdDB file, you have to go back to the gvcf files.
 
 
 We need to create a map file to GATK where our gvcf files are and what sample is in each. Because we use a regular naming scheme for our samples, we can create that using a bash script.
-This is what we're looking for:
 
+A file like this is what we're looking for:
+```
 sample1 \t gvcf/sample1.g.vcf.gz
 
 sample2 \t gvcf/sample2.g.vcf.gz
 
 sample3 \t gvcf/sample3.g.vcf.gz
+```
+*Note that we added spaces just for visual purposes - GATK is expecting a tab-delimited file*
 
 ```bash
 for i in `ls gvcf/*g.vcf | sed 's/.sort.dedup.g.vcf//g' | sed 's/gvcf\///g'`
 do
   echo -e "$i\tgvcf/$i.sort.dedup.g.vcf"
-done > ~/biol525d.sample_map
+done > ~/SalmonSim.sample_map
 
 #take a look
-cat ~/biol525d.sample_map
+cat ~/SalmonSim.sample_map
 ```
 
-Lets break down this loop to understand how its working 
+Lets break down this loop to understand how its working:
 
 **for i in `...`** <= This is going to take the output of the commands in the `...` and loop through it line by line, putting the each line into the variable $i. 
 
@@ -146,40 +161,44 @@ Lets break down this loop to understand how its working
 
 **echo -e "$i\t$gvcf/$i.sort.dedup.g.vcf"** <= Print out the variable $i (which is the sample name) and then a second column with the full file name along with the soft path.
 
-**done > ~/biol525d.sample_map** <= Take all the output and put it into a file name _biol525d.sample_map_.
+**done > ~/SalmonSim.sample_map** <= Take all the output and put it into a file name _SalmonSim.sample_map_.
 
 
 Next we call GenomicsDBImport to actually create the database. This command requires a list of scaffolds so we'll make that too.
+
 ```bash
 java -Xmx10g -jar $gatk \
        GenomicsDBImport \
        --genomicsdb-workspace-path db/Chinook_chr1 \
        --batch-size 50 \
        -L  chr_1 \
-       --sample-name-map ~/biol525d.sample_map \
+       --sample-name-map ~/SalmonSim.sample_map \
        --reader-threads 3
 ```
 
-With the genomicsDB created, we're finally ready to actually call variants and output a vcf
+With the genomicsDB created, we're finally ready to actually call variants and output a vcf:
+
 ```bash
 java -Xmx10g -jar $gatk GenotypeGVCFs \
-   -R ref/SalmonReference.fasta \
+   -R fasta/SalmonReference.fasta \
    -V gendb://db/Chinook_chr1 \
    -O vcf/Chinook_p1_i12i89_chr1.vcf.gz
 ```
+
+
 Now we can actually look at the VCF file
 
 ```bash
 less -S vcf/Chinook_p1_i12i89_chr1.vcf.gz
 ```
 
-Try to find an indel. Do you see any sites with more than 1 alternate alleles? 
+**Tasks:**
+* Try to find an indel. Do you see any sites with more than 1 alternate alleles? 
+* Pick a site and figure out, whats the minor allele frequency? How many samples were genotyped? 
 
-Pick a site and figure out, whats the minor allele frequency? How many samples were genotyped? 
+So far we have called variants for a single chromosome. Our simulated genome has two chromosomes, but for many genome assemblies there may be thousands of contigs. Your next challenge is to write a loop to create the genomicsdb file and then VCF for each chromosome (...check out gatk's genomicsdb documentation... is there another way to create a db for multiple chromosomes more efficiently?) 
 
-We've now called variants for a single chromosome, but there are other chromosomes. In this case there are only three, but for many genomes there will be thousands of contigs. Your next challenge is to write a loop to create the genomicsdb file and then VCF for each chromosome (...check out gatk's genomicsdb documentation... is there another way to create a db for multiple chromosomes more efficiently?) 
-
-Once you have two VCF files, one for each chromosome, you can concatenate them together to make a single VCF file. We're going to use _bcftools_ which is a very fast program for manipulating vcfs as well as bcfs (the binary version of a vcf).
+Once you have two VCF files, one for each chromosome, you can concatenate them together to make a single VCF file. We're going to use ```bcftools``` which is a very fast program for manipulating vcfs as well as bcfs (the binary version of a vcf).
 
 ```bash
 

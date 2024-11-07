@@ -22,8 +22,11 @@ Let's set up a directory structure so the resulting files will be organized and 
 # Navigate to your working directory
 cd ~
 
+# Make a place to store your reference genome
+mkdir fasta
+
 # Copy the reference genome to your working directory
-cp -r /mnt/data/assemblies/SalmonReference.fasta ./
+cp -r /mnt/data/assemblies/SalmonReference.fasta fasta
 
 # Copy the fastq files to your working directory
 cp -r /mnt/data/fastq/GWAS_samples/ ./
@@ -40,6 +43,7 @@ Now, let's go ahead and index our reference genome.
 
 bwa index fasta/SalmonReference.fasta
 
+# Takes about 5 seconds
 ```
 
 Great! We can now run BWA and align our short read data.
@@ -52,11 +56,11 @@ With our newly index reference genome, let's now go about mapping short reads to
 # We have installed BWA on the VMs, so you don't need to specify the path
 bwa mem \
   fasta/SalmonReference.fasta \
-  GWAS_samples/Salmon.p1.3.i1.400000_R1.fastq.gz \
-  GWAS_samples/Salmon.p1.3.i1.400000_R2.fastq.gz \
+  GWAS_samples/SalmonSim.p1.3.i1.400000_R1.fastq.gz \
+  GWAS_samples/SalmonSim.p1.3.i1.400000_R2.fastq.gz \
   -t 2 \
-  -R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:biol525d\tLB:sample_1_library' \
-  > bam/Salmon.p1.3.i1.sam
+  -R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:salmonSim\tLB:sample_1_library' \
+  > bam/SalmonSim.p1.3.i1.sam
 
 ```
 *This will take a few moments to run*
@@ -77,7 +81,7 @@ Lets break this command down since it has several parts:
 
 * **-t 2** <= This is telling the program how many threads (i.e. cpus) to use. In this case we're only using two because we're sharing the machine with the other students.
 
-* **-R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:biol525d\tLB:sample_1_library'** <= This is adding read group information to the resulting SAM file. Read group information lets other programs know what the sample name along with other factors. It is necessary for GATK to run later on.
+* **-R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:salmonSim\tLB:sample_1_library'** <= This is adding read group information to the resulting SAM file. Read group information lets other programs know what the sample name along with other factors. It is necessary for GATK to run later on.
 
 * **> bam/Salmon.p1.3.i1.sam** <= This is directing the output of the program into the file bam/Salmon.p1.3.i1.sam
 
@@ -89,7 +93,7 @@ Lets examine the SAM file. It contains all the information on the reads from the
 ```bash
 
 # Let's view that SAM file
-less -S bam/Salmon.p1.3.i1.sam
+less -S bam/SalmonSim.p1.3.i1.sam
 
 # Notice the @PG line that includes the program call that created the SAM file.
 # This is useful for record keeping.
@@ -112,14 +116,14 @@ ____________________________
 At this point we'll introduce a very useful - and incredibly widely used - piece of software called `samtools`. As the name suggests, `samtools` is a program for working with SAM/BAM files.
 
 ### *Note*
-`samtools` can produce very useful summaries of alignments - try running `samtools flagstat bam/Salmon.p1.3.i1.sam`.
+`samtools` can produce very useful summaries of alignments - try running `samtools flagstat bam/SalmonSim.p1.3.i1.sam`.
 
 A question that you might ask of an alignment would be, what proportion of my reads mapped to the genome? At this stage, our SAM file contains all the read data, whether reads mapped or not. Using `samtools`, we can easily get a count of the number of reads that successfully mapped to the genome.
 
 
 ```bash
 
-samtools view -c bam/Salmon.p1.3.i1.sam
+samtools view -c bam/SalmonSim.p1.3.i1.sam
 
 ```
 
@@ -127,7 +131,7 @@ Lets break this command down:
 * `samtools`  - the program tat we want to run
 * `view` - the mode we want to run the program in
 * `-c` - this flag indicates that we want a count of reads
-* `bam/Salmon.p1.3.i1.sam` - The input file
+* `bam/SalmonSim.p1.3.i1.sam` - The input file
 
 
 This should have printed the total number of mapped reads to screen. There should be no surprises here.  
@@ -137,7 +141,7 @@ Now what we're going to do is to remove the `-c` option, which causes `samtools`
 In the following, we'll take our SAM file (human readable) and convert to a BAM file (machine readable) and sort reads by their aligned position.
 
 ```bash
-samtools view -bh bam/Salmon.p1.3.i1.sam | samtools sort > bam/Salmon.p1.3.i1.sort.bam
+samtools view -bh bam/SalmonSim.p1.3.i1.sam | samtools sort > bam/SalmonSim.p1.3.i1.sort.bam
 ```
 
 
@@ -156,8 +160,8 @@ With this command we're using the pipe "|" to pass data directly between command
 Next we want to take a look at our aligned reads. First we index the file, then we use samtools tview.
 
 ```bash
-samtools index bam/Salmon.p1.3.i1.sort.bam # build an index of a BAM file
-samtools tview bam/Salmon.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta
+samtools index bam/SalmonSim.p1.3.i1.sort.bam # build an index of a BAM file
+samtools tview bam/SalmonSim.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta
 
 #use ? to open the help menu. Scroll left and right with H and L.
 #Try to find positions where the sample doesn't have the reference allele.
@@ -177,7 +181,7 @@ The additional option ` -p chr_1:80000 ` tells `tview` to jump straight to chr_1
 
 ### *Note*
 
-Another useful summary that `samtools` can produce very quickly is coverage stats. Try running `samtools depth bam/Salmon.p1.3.i1.sort.bam`. Can you think of how you could use the tools you were learning yesterday could be used to take the output from `samtools` to quickly calculate the average depth?
+Another useful summary that `samtools` can produce very quickly is coverage stats. Try running `samtools depth bam/SalmonSim.p1.3.i1.sort.bam`. Can you think of how you could use the tools you were learning yesterday could be used to take the output from `samtools` to quickly calculate the average depth?
 
 
 
@@ -248,7 +252,7 @@ MORE HINTS:
 <details>
 <summary markdown="span">**Answer**
 </summary>
-```bash
+<code>
   # First set up variable names
   # These may be slightly different on the VMs
   bam=~/bam
@@ -276,7 +280,7 @@ MORE HINTS:
     rm $bam/$name.sam # Remove intermediate file
 
   done < $bam/samplelist.txt
-```
+</code>
 </details>
 
 After your final BAM files are created, and you've checked that they look good, you should remove intermediate files to save space. You can build file removal into your bash scripts as we've done in the worked example, but it is often helpful to only add that in once the script is up and running. It's hard to troubleshoot a failed script if it deletes everything as it goes.
