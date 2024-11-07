@@ -6,13 +6,13 @@ category: Jekyll
 layout: post
 ---
 
-## Accompanying material
+### Accompanying material
 [Lecture Slides](/pages/topic_8/topic_8.pdf)
 
 In this tutorial we're going to call SNPs with GATK.
 
 
-# 1. Setup Environment
+# 1. Set Up Environment
 
 The first step is again to set up directories to put our incoming files.
 ```bash
