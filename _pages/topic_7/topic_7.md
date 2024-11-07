@@ -8,7 +8,7 @@ layout: post
 
 ### Accompanying material
 
-[Lecture Slides](/pages/topic_7/Topic_7.pdf)
+[Lecture Slides](/pages/topic_7/topic_7.pdf)
 
 
 # 1. Indexing Reference Genome
