@@ -1,231 +1,293 @@
 ---
-title: "Topic 6 - RNAseq Analysis"
+title: "Topic 7 - Read Mapping"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
 layout: post
 ---
 
-
 ### Accompanying material
 
 [Lecture Slides](/pages/topic_6/topic_6.pdf)
 
-__________________________________
 
-# 0. Setting up
+# 1. Indexing Reference Genome
 
-In this tutorial we are going to do the following:
+Today we're going to align sequence data to a reference genome using BWA and explore what a BAM file is. As we saw in the genome assembly tutorial, the assembled genomes that we contstructed all have pros and cons. For the sake of this workshop, let's go ahead and use the ground genome. 
 
-1. Align the RNAseq data to the reference
-2. Obtain counts of the reads mapping to genes in the Salmon genome
-3. Test for differential gene expression between fish from warm and cold parts of the river - This last step will be done in Rstudio
-
-
-We have data for 12 fish, 6 from each location in the river.
-
-FASTQ files containing RNA seq reads for the 12 fish are located at:
-
-```
-/mnt/data/fastq/rna/
-```
-
-Let's set up our environment and make a local copy of the RNA data...
+Let's set up a directory structure so the resulting files will be organized and copy the raw data to your home directory.
 
 ```bash
 
 # Navigate to your working directory
 cd ~
 
-# Copy the RNA fastq files
-cp -r /mnt/data/fastq/RNA/ ./
+# Make a place to store your reference genome
+mkdir fasta
 
-# Make a local copy the Salmon annotation file...
-cp -r /mnt/data/anno/SalmonAnnotations.gff  ./
+# Copy the reference genome to your working directory
+cp -r /mnt/data/assemblies/SalmonReference.fasta fasta
 
-# Make a new directory for your resulting RNA-seq BAM files
-mkdir rna_bam
+# Copy the fastq files to your working directory
+cp -r /mnt/data/fastq/GWAS_samples/ ./
+
+# Make a new directory for your resulting BAM files
+mkdir bam
 ```
+We are going to work with the true genome of the species that you explored yesterday because we have limited time. However, can you think of how the choice of assembly would affect the mapping of our data?
 
-We've got paired end reads, so there's two fastq files per sample. The samples are named in a pretty obvious way, but I'll let you see that for yourself.
-
-# 1. Aligning RNAseq data
-
-We will use the splice-aware RNA read aligner STAR. As mentioned in the lecture, STAR performs well under default parameter settings. For this tutorial, we will not have time to tinker with alignment settings, we will just use the program defaults.
-
-### Install and locate relevant software
-
-We have preinstalled STAR on each of the servers, but if you were to do this yourself you can follow the easy instructions on the STAR GitHub page ([https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)).
-
-STAR is in the following location on each of the VMs:
-```sh
-/mnt/software/STAR-2.7.10a_alpha_220818/source/STAR
-```
-
-It is a bit annoying to have to type that whole path in all the time, so let's add it to our PATH.
-
-The PATH is a list of directories that your shell searches through when you enter a command.
-
-If you add the directory containing the STAR executable to the path, you'll be able to access it at the command line without the need to specify the full path.
-
-Here's how you can do that:
-```sh
-# navigate to home directory
-cd
-
-# open up your bash profile (in our home directory)
-emacs .bashrc  # I like emacs, but use whichever text editor you prefer
-
-```
-
-When in your text editor, add the following text and save the file:
-```bash
-echo "Hello, you are cool!"
-export PATH="/mnt/software/STAR-2.7.10a_alpha_220818/source/:$PATH"
-```
-
-To get your operating system to work with the new instructions you've given it you can refresh your terminal session using the following command:
+Now, let's go ahead and index our reference genome.
 
 ```bash
-source ~/.bashrc
+# Index the references for BWA.
+
+bwa index fasta/SalmonReference.fasta
+
+# Takes about 5 seconds
 ```
-This command just reloads the configuration file you've just edited. You can also accomplish this by logging out and logging back in.
 
-There are a couple of things here that we have not covered so far. One is the shell profile. This is a set of commands that the server runs when you log in. As you develop your skills it becomes really handy to customise your bash profile.
+Great! We can now run BWA and align our short read data.
 
-Now check that it worked:
+# 2. Map Short Reads Using BWA
+
+With our newly index reference genome, let's now go about mapping short reads to the genome.
 
 ```bash
-STAR --help
+# We have installed BWA on the VMs, so you don't need to specify the path
+bwa mem \
+  fasta/SalmonReference.fasta \
+  GWAS_samples/SalmonSim.p1.3.i1.400000_R1.fastq.gz \
+  GWAS_samples/SalmonSim.p1.3.i1.400000_R2.fastq.gz \
+  -t 2 \
+  -R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:salmonSim\tLB:sample_1_library' \
+  > bam/SalmonSim.p1.3.i1.sam
 
 ```
-That should access the STAR executable and print a bunch of help text to the screen.
-
-### Build a genome index
-
-Now that we have STAR up and running, the first thing we'll need to do is build an index for the reference genome so that we can align our reads to it. Building an index is necessary for many bioinformatic operations. It is not dissimilar to the index of a book that tells you where to find certain topics or key wrods. In the case of a genomic index, one builds a record of where you find certain sequences. That makes looking through the genome much more efficient.
+*This will take a few moments to run*
 
 
-STAR, like many read aligners, has many modes of operation and building an index is just one of them. To tell STAR
+Lets break this command down since it has several parts:
+**/usr/bin/bwa** <= We're calling the program _bwa_ from the directory _/usr/bin/_. This is the full path to that program so you can call this no matter where you are in the file system.
 
-```sh
+* **mem** <= This is the mode of bwa we are running. It is an option specific to bwa and not a Unix command.
 
-mkdir fasta/STAR_index/ ## This is a directory to hold the STAR reference genome index
+* **\\** <= Having this at the end of the line tells the shell that the line isn't finished and keeps going. You don't need to use this when typing commands in, but it helps break up really long commands and keeps your code more organized.
 
-STAR --runThreadN 2 \ # The number of threads to spawn this process on
-                              --runMode genomeGenerate \ # The mode of operation for STAR
-                              --genomeDir fasta/STAR_index/ \ # A place to store the index file
-                              --genomeFastaFiles fasta/SalmonReference.fasta \ # The location of the reference genome
-                              --sjdbGTFfile SalmonAnnotations.gff # The location of the genome annotations, in GFF format
+* **fasta/SalmonReference.fasta** <= This is the reference genome. We're using a relative path here so you need be in /mnt/<USERNAME> or it won't be able to find this file.
 
+* **GWAS_samples/Salmon.p1.3.i1.400000_R1.fastq.gz** <= This is the forward read (e.g. read 1)  set for the first sample. It's also a relative path and we can see that the file has been gzipped (since it has a .gz ending).
 
-```
+* **GWAS_samples/Salmon.p1.3.i1.400000_R2.fastq.gz** <= This is the reverse read (e.g. read 2)  set for the first sample.
 
-You'll need to specify the location of the Salmon reference genome and genome annotation files appropriately.
+* **-t 2** <= This is telling the program how many threads (i.e. cpus) to use. In this case we're only using two because we're sharing the machine with the other students.
 
-This takes about half a minute to run on 2 threads. Each VM has a maximum of 16 threads, so please do not use too many at once!
+* **-R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:salmonSim\tLB:sample_1_library'** <= This is adding read group information to the resulting SAM file. Read group information lets other programs know what the sample name along with other factors. It is necessary for GATK to run later on.
 
-Inspect the output of this step. Can you see any cause for concern?
+* **> bam/Salmon.p1.3.i1.sam** <= This is directing the output of the program into the file bam/Salmon.p1.3.i1.sam
 
-When I run this, I get the following error message in the output of the program:
-```bash
-!!!!! WARNING: --genomeSAindexNbases 14 is too large for the genome size=10000000, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 10
-```
-
-This is telling us that our genome is smaller than the program was anticipating so we should adjust a parameter of the suffix array.
-
-*This exact issue will probably not arise when you analyse your data, but we include it as a reminder to keep an eye of the program logs*
-
-Let's re-run the program, adjusting this parameter:
-
-```sh
-STAR --runThreadN 2 \ # The number of threads to spawn this process on
-                              --runMode genomeGenerate \ # The mode of operation for STAR
-                              --genomeDir fasta/STAR_index/ \ # A place to store the index file
-                              --genomeFastaFiles SalmonReference.fasta \ # The location of the reference genome
-                              --sjdbGTFfile SalmonAnnotations.gff \ # The location of the genome annotations, in GFF format
-                              --genomeSAindexNbases 10
+We now have our reads aligned to the genome in a human readable format (SAM) instead of binary format (bam) which we will use later. Generally we keep our data in BAM format because its more compressed but we can use this opportunity to better understand the format.
 
 
-
-```
-
-
-That will have hopefully run with no issues!
-
-
-### Map RNA-seq reads
-
-Now we've built our index, we can map our reads to the reference genome.
-
-We'll use STAR to map the reads too:
-
-```sh
-
-STAR --genomeDir location_to_save_index/ \ # This tells STAR where we've put the reference genome - the place you specified above
-      --readFilesIn cold_sample_04_1.fq.gz cold_sample_04_2.fq.gz \ # Give the two FASTQ files for paired-end reads
-      --outFileNamePrefix cold_sample_04. \ # Give a prefix for all of the output files
-      --outSAMtype BAM SortedByCoordinate \ # This tells STAR to outut the alignments in BAM format and sorted by coordinate
-      --outSAMunmapped Within \ # Puts the unmapped reads into the BAM file
-      --outSAMattributes Standard \ # Use standard SAM formatting
-      --readFilesCommand zcat \ # This tells STAR that the fastq files were gzipped
-      --runThreadN 2
-
-```
-You can use multiple threads when aligning reads with STAR too. When you're working with full sized datasets that will for sure come in handy, but with the data we are working with that's not a big issue. Mapping the reads using a two threads takes about a minute per sample.
-
-**Note that more recent versions of STAR may throw an error telling you that the program has not been allocated enough RAM. Go through the error message, can you fix the issue?**
-
-
-
-If the program ran successfully, it should have produced several files:
-```
-cold_sample_04.Aligned.sortedByCoord.out.bam   # The BAM file
-cold_sample_04.Log.progress.out # The progress report
-cold_sample_04.Log.final.out # Summary stats from the final output
-cold_sample_04.SJ.out.tab # Counts of splice junctions
-cold_sample_04.Log.out # The overall log of the alignment run
-```
-
-
-# Challenge 1
-The above mapped reads for a single sample. We need to repeat the above but for all samples that we have data for. Can you think of a way to run the above for all the samples we have data for that does not involve manually typing each one in?
-
-
-### Obtain raw read counts
-
-Now we have BAM files for each sample we'll need to count the number of reads associated with each gene.
-
-To obtain counts of reads we will use the `htseq-count` tool. This is a popular and very handy tool that can be used to obtain counts of RNA seq reads that have been mapped to a genome.
-
-`htseq-count` sends its list of read counts to STDOUT, so you need to capture it with a redirect if you want to save the output
+Lets examine the SAM file. It contains all the information on the reads from the fastq file, but also alignment information.
 
 ```bash
-htseq-count -s no \
-            -r pos \
-            -t exon \ # What type of feature will our data have mapped to?
-            -i gene \
-            -f bam \
-            cold_sample_04.Aligned.sortedByCoord.out.bam \
-            /mnt/data/anno/SalmonAnnotations.gff  > cold_sample_04.read_counts.txt
+
+# Let's view that SAM file
+less -S bam/SalmonSim.p1.3.i1.sam
+
+# Notice the @PG line that includes the program call that created the SAM file.
+# This is useful for record keeping.
+
 ```
+### *Note*
+The option `-S` when running less chops lines that are longer than the page. This is normally just an aesthetic choice. When looking at SAM/BAM files this is quite necessary!
 
-Inspect the contents of `cold_sample_07.read_counts.txt`. It should be fairly obvious what this file contains.
 
-HTSeq-count also includes some summary stats at the bottom of the file. Let's clip those off before we move on...
+
+### Questions:
+1. How are reads ordered in the SAM file?
+2. What does the 6th column represent? What would the string "3M1I3M1D5M" tell you?
+3. What are three possible reasons why mapping quality could be low for a particular read?
+
+____________________________
+
+# 3. Inspect BAM File with SAMTools
+
+At this point we'll introduce a very useful - and incredibly widely used - piece of software called `samtools`. As the name suggests, `samtools` is a program for working with SAM/BAM files.
+
+### *Note*
+`samtools` can produce very useful summaries of alignments - try running `samtools flagstat bam/SalmonSim.p1.3.i1.sam`.
+
+A question that you might ask of an alignment would be, what proportion of my reads mapped to the genome? At this stage, our SAM file contains all the read data, whether reads mapped or not. Using `samtools`, we can easily get a count of the number of reads that successfully mapped to the genome.
+
 
 ```bash
-grep -v "^_" cold_sample_07.read_counts.txt > cold_sample_07.read_counts.clipped.txt
+
+samtools view -c bam/SalmonSim.p1.3.i1.sam
 
 ```
 
+Lets break this command down:
+* `samtools`  - the program tat we want to run
+* `view` - the mode we want to run the program in
+* `-c` - this flag indicates that we want a count of reads
+* `bam/SalmonSim.p1.3.i1.sam` - The input file
 
-# 2. Differential Expression Analysis with DESeq2
 
-Differential expression analysis can be quite a complicated statistical analysis. Many people choose to use packages specifically designed for the analysis of expression data. For example, the program `DESeq2` is very widely used.
+This should have printed the total number of mapped reads to screen. There should be no surprises here.  
 
-In this directory, I've included a script that does a differential expression analysis of the RNAseq data we have just aligned to the genome using DESeq2.
+Now what we're going to do is to remove the `-c` option, which causes `samtools` to send the output straight to STDOUT. This is handy as it means we can pipe it into another process.
 
-[Here's a link to that script](/pages/topic_6/Tutorial_diffExpression.R)
+In the following, we'll take our SAM file (human readable) and convert to a BAM file (machine readable) and sort reads by their aligned position.
 
-This is an R script. Running this script requires the use of particular R packages. For today, we'll work through the analysis as a group. By the end of the week you'll have had some exposure to analyses in R, so it would be good to revisit this analysis once you've done that.
+```bash
+samtools view -bh bam/SalmonSim.p1.3.i1.sam | samtools sort > bam/SalmonSim.p1.3.i1.sort.bam
+```
+
+
+Lets break this command down:
+* `samtools`  - the program tat we want to run
+* `view` - the mode we want to run the program in
+* `-bh` - this is actually two flags, one that tells samtools to express the data in binary form and the other that tells samtools to include the header
+* `bam/Salmon.p1.3.i1.sam` - The input file
+* `|` - The pipe symbol - you should be familiar with this by now
+* `samtools sort` - another mode of samtools that sorts SAM/BAM files by coordinate
+* `> bam/Salmon.p1.3.i1.sort.bam` - the name you want to give to the output file
+
+
+With this command we're using the pipe "|" to pass data directly between commands without saving the intermediates. This makes the command faster since its not saving the intermediate file to hard disk (which is slower). It can be more risky though because if any steps fails you have to start from the beginning.
+
+Next we want to take a look at our aligned reads. First we index the file, then we use samtools tview.
+
+```bash
+samtools index bam/SalmonSim.p1.3.i1.sort.bam # build an index of a BAM file
+samtools tview bam/SalmonSim.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta
+
+#use ? to open the help menu. Scroll left and right with H and L.
+#Try to find positions where the sample doesn't have the reference allele.
+
+```
+
+`samtools tview` is similar to IGV but is accessible directly from the command line.
+
+You can jump to a specific location in a BAM file with `samtools tview` using the following command:
+
+```
+
+samtools tview bam/Salmon.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta -p chr_1:80000
+
+```
+The additional option ` -p chr_1:80000 ` tells `tview` to jump straight to chr_1 position 80000. Any valid location in the SAM/BAM can be referenced that way.
+
+### *Note*
+
+Another useful summary that `samtools` can produce very quickly is coverage stats. Try running `samtools depth bam/SalmonSim.p1.3.i1.sort.bam`. Can you think of how you could use the tools you were learning yesterday could be used to take the output from `samtools` to quickly calculate the average depth?
+
+
+
+# Exercise
+
+
+A bash script is a plain text file (i.e. not rich text, nor a word doc) which contains bash commands. You can create the file on your computer and copy it over, or you can edit it directly from the server with one of the installed editors (this is covered in [topic 2, Editing](../Topic_2/#editing). The name of the file is up to you, but bash scripts are given the `.sh` extension by convention.
+
+Here's an example of what you might see inside a bash script:
+
+```
+age=10
+echo "I am $age years young"
+
+```
+(we used a similar example the other day)
+
+The lines of this script do the following:
+
+* `age=10` - this assigns the number 10 to a variable called `age`
+* `echo "I am $age years young"` - this prints a piece of text to the screen containing that age variable
+
+
+
+So a bash script (a.k.a. shell script) is a just set of commands saved as a file. If you named the shell script from above as a file named `myScript.sh`, you could execute the commands by simply running:
+
+```bash
+sh myScript.sh
+```
+
+_____________________________
+
+Obviously that example is a little silly, but hopefully you can see how writing shell scripts is a very useful and efficient way of organising your work at the command line.
+
+If you look in the `/mnt/data/fastq/GWAS_samples/` directory, you'll see that we have data here for 10 samples. It would be very tedious to align each one of these as we have for the single file above.
+
+For this exercise, try writing a bash script to produced a sorted BAM file for each sample as you have done for the single sample above.
+
+When writing a shell script, try to think of the steps that do not need to be repeated over and over again.
+
+
+HINTS:
+  * Use variables for directory paths e.g. `bwa=/mnt/bin/bwa-0.7.17/bwa`
+  * Use a loop.
+  {: .spoiler}
+
+MORE HINTS:
+  * for/while loops can receive input from stdin (or a file):
+
+        while read fname;
+	  do echo processing "$fname";
+	done < list_of_things.txt
+  {: .spoiler}
+
+  * You can do pathname manipulation with `basename` and `dirname` (see manual pages):
+
+    ```
+    dirname a/b/c          # prints a/b
+    basename a/b/c.gz      # prints c.gz
+    basename a/b/c.gz .gz  # prints c
+
+    fpath=/path/to/the/file.gz
+    base=$(basename "$fpath")    # assign "file.gz" to variable base
+    echo "$base"                 # prints file.gz
+    ```
+  {: .spoiler}
+
+<details>
+<summary markdown="span">**Answer**
+</summary>
+<code>
+  # First set up variable names
+  # These may be slightly different on the VMs
+  bam=~/bam
+  fastq=~/GWAS_samples
+  bwa=bwa
+  ref_file=~/fasta/SalmonReference.fasta
+
+  #Then get a list of sample names, without suffixes
+  ls $fastq | grep R1.fastq.gz | sed s/_R1.fastq.gz//g > $bam/samplelist.txt
+
+  #Then loop through the samples
+  while read name
+  do
+    $bwa mem \
+    -R "@RG\tID:$name\tSM:$name\tPL:ILLUMINA" \
+    $ref_file \
+    $fastq/${name}_R1.fastq.gz \
+    $fastq/${name}_R2.fastq.gz \
+    -t 1 > $bam/$name.sam;
+
+    samtools view -bh $bam/$name.sam |\
+    samtools sort > $bam/$name.sort.bam;
+    samtools index $bam/$name.sort.bam
+
+    rm $bam/$name.sam # Remove intermediate file
+
+  done < $bam/samplelist.txt
+</code>
+</details>
+
+After your final BAM files are created, and you've checked that they look good, you should remove intermediate files to save space. You can build file removal into your bash scripts as we've done in the worked example, but it is often helpful to only add that in once the script is up and running. It's hard to troubleshoot a failed script if it deletes everything as it goes.
+
+### By topic 7, you should have created cleaned BAM files for all samples.
+
+## Questions for Discussion
+1. Is an alignment with a higher percent of mapped reads always better than one with a lower percent? Why or why not?
+2. I want to reduce the percent of incorrectly mapped reads when using BWA. What setting or settings should I change in BWA?
+3. What are two ways that could be used to evaluate which aligner is best?

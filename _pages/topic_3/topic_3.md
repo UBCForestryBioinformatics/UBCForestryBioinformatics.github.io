@@ -1,178 +1,200 @@
 ---
-title: "Topic 3 - Sequence Data"
+title: "Topic 4 - Sequence Alignment"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
 layout: post
 ---
 
-### Accompanying material
-
+# Accompanying material
 [Lecture Slides](/pages/topic_3/Topic_3.pdf)
 
-# 1 - Overview of sequence data
 
-In this exercise, let's pretend that you have been notified that your data is ready for download from the sequence centre. You submitted a short read sequencing library and a long read sequencing library generated using Illumina and PacBio technologies, respectively.
+# 1 - k-mers  
 
-To start, make a local copy of the data files in your home directory. Run the following:
-```
-cp /mnt/data/Tutorial_3_data.tar.gz ./ # Make a local copy of the sequence data
+1. Write a one liner to find all the overlaps (i.e. the beginning or the end) exactly 4bp in length between CTCTAGGCC and a list of other sequences in the file /mnt/data/codebreaks/overlaps.fa
 
-tar -zxvf Tutorial_3_data.tar.gz  # Extract the data from the tarball that it was shipped in
+2. Find all the unique 9mers in a fasta sequence /mnt/data/codebreaks/kmer.fa
 
-```
+This might be a tricky one and there are likely many ways to do this. First try out these commands that might help you complete this task. It might also be helpful to determine how many characters are in the sequence (wc -c).
 
-A "tarball" is a way of compressing an entire directory full of files so that you only have to download one data packet rather than many. The options given to tar do the following:
-* ``-z``, this tells the program that the file "Tutorial_3_data.tar.gz" is compressed or zipped
-* ``-x``, this tells the program to extract the files from the archive
-* ``-v``, this tells the program to print a log to screen
-* ``f``, this tells the program that you are specifying the tar-ball as a file on the command line
+Hints: test out the following commands:
 
-
-### Checking data integrity
-
-Often when downloading large files, we want to perform a check on the integrity of the data downloaded. Perhaps you were downloading a large file and the power went down before you were not able to check the data. More generally, when downloading many large files you may not have the time (or the patience) to manually curate each one to ensure that it was downloaded correctly.
-
-It is good practice to check data integrity when moving files from place to place and there are useful functions for checking data integrity. The two main methods that are used are shasum and md5. shasum is perhaps a bit more common as it is available as standard on MacOS. Both methods generate what is called a “checksum”, a hexadecimal string (e.g. “d241941bac307bd853fd21945d029e62c83cea71”) that is unique to a given file.
-
-The data that you obtained for Topic 1 also contained a file called ```SalmonData_checksums.sha```. If you inspect the contents of ```SalmonData_checksums.sha``` you’ll notice that there are two columns in the file, the left hand column contains a bunch of checksums, the righthand column contains the name of corresponding files. You can compare all the files in the directory you downloaded using:
-
-Store your checksums with your data, where ever you host it.
-
-Navigate to the location of the data and check that the downloaded data actually match those that were sent by the sequencing centre...
-
-```
-cd Tutorial_3_data
-shasum -c SalmonData_checksums.sha
+```bash
+cut -c1- /mnt/data/codebreaks/kmer.fa
+cut -c1-4 /mnt/data/codebreaks/kmer.fa
 ```
 
-As long as everything worked well, you should have seen reassuring messages print to screen after invoking the `shasum` command.
-
-______________________________
-
-Now we've got our data, let's just make a couple of directories to tidy things up.
-
-```
-mkdir short_reads
-mv Salmon.Illumina.R?.fastq.gz short_reads/ # Note the use of the single character wildcard!
-
-mkdir long_reads
-mv Salmon.PacBio.fastq.gz long_reads/
-
-cd ../
-
+```bash
+wc -c /mnt/data/codebreaks/kmer.fa
 ```
 
-Great, that's nice and tidy now.
+```bash
+for num in {1..10}
+do
+echo $num >> file.txt
+done
+```
+What do these commands do? Can you use commands like this to find all the kmers in the sequence? 
 
 
-# Exercise 1
+Think about how you could incorporate some basic algebra and variable assignment to solve this problem.
 
-A question that might be on top of mind would be, how many reads are we working with?
+```bash
+#one way to do math in bash is by piping to bc (basic calculator).
+echo "1+1" | bc
+#another way to do arithmitic in bash is through the $(( )) syntax which tells shell to evaluate its contents
+echo $((1+1))
+```
 
-Can you use command line tools to get a count of the number of reads that we have from the two datasets?
 
-*Hint, remember the structure of a fastq file*
+<details>
+<summary markdown="span">**Answer**</summary>
+<code>
+for i in {1..52} ; do  k=$(($i+8)); cut -c $i-$k /mnt/data/codebreaks/kmer.fa; done
 
-Once you've done that, take a look at the contents of each file. How are paired-end reads identified? What information is used to identify read mates?
+</code>
+</details>
 
-# 2 - Read Quality
 
-### Install fastqc
 
-We are going to use a program called `FastQC` to examine the quality of the sequencing reads that we are working with.
+______________
 
-It is really easy to generate a report using `FastQC`, it's just a matter of telling the program where the files are that you want to analyse. For example:
+
+# 2 - Nucleotide Alignment
+
+### Exact matches
+
+Very frequently in high-throughput bioinformatics we are interested in aligning fragments of DNA against a large reference genome. In this context, our sequencing reads (i.e. the fragmented DNA) is referred to as a *query sequence* that we want to compare with a *subject sequence* (the reference genome).
+
+First, let's make a copy of the reference genome...
+
 
 ```bash
 
-shortreads="/home/tommyB/Tutorial_3_data/short_reads/" # Obviously use your own user name here
-longreads="/home/tommyB/Tutorial_3_data/long_reads/"
-
-mkdir qualityControl
-cd qualityControl
-
-#The program is installed on the server so can be accessed as follows:
-fastqc ${shortreads}/*fastq.gz ${longreads}/*fastq.gz -o ./
-```
-
-*Oh no!* `FastQC` was not found!If you read the error message it looks FASTQC has not been installed on these servers. I guess this would be a good chance to try downloading a package from the internet.
-
-The first thing you need is the address of the most recent version of `fastqc`. If you navigate the program's website, you'll find several download links when you click "Download Now":
-[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
-
-*DO NOT LEFT CLICK ON THE DOWNLOAD LINK!*
-Instead, right click the link for Linux downloads and hit "Copy link address"
-
-Now, we can use that link to download the package directory to our local directories:
-```bash
-wget <insert copied link here>
-
-# This should have downloaded a zipped file called something like fastqc_v0.11.9.zip
-
-# To unzip just run:
-unzip fastqc_v0.11.9.zip ## Note that the version umber has probably changed...
-
-# This will have made a directory, go into it:
-cd FastQC
-
-## If you get the following message, FASTQC is not executable:
-Can't exec "java": No such file or directory at ./fastqc line 350.
-
-## You can change that using:
-chmod +x fastqc
+cp /mnt/data/assemblies/SalmonReference.fasta ~/ ## this will copy the reference genome to your home directory
 
 ```
 
-Phew, now we should have a happy version of fastqc that we can work with.
 
-### Now lets look at some properties of our reads
+Select one of the k-mers from the list you generated above.  
 
-```bash
+<details>
+<summary markdown="span">**If you didn't finish the above bit click here to get a 9-mer to work with**</summary>
 
-shortreads="~/Tutorial_3_data/short_reads/"
-longreads="~/Tutorial_3_data/long_reads/"
+<code>ATCGCACAA</code>
+</details>
 
-mkdir qualityControl
-cd qualityControl
+<br>
+<br>
+<br>
 
-#fastqc is a widely used program for looking at read quality
- ~/FastQC/fastqc  ${shortreads}/*fastq.gz ${longreads}/*fastq.gz -o ./
+With your 9-mer, identify regions of the reference genome that contain that sequence using ```grep```.
 
-# Now, we are referring to the version of FastQC that we just downloaded, and it should play nicely with the Java version we are working with.
-
-#some programs allow you to input multiple files at once using wild cards. this is convenient.
-#otherwise we would have had to specify each file individually. Here's another way we could use wildcards here:
-
-#fastqc ${shortreads}/*R?.fastq.gz ${longreads}/*fastq.gz -o ./ )
-
-#summarise into a single report
-multiqc ./
-```
-
-If the above looked like it ran happily, logout of your current session by writing:
-```logout```
+<br>
+*Can you think why your number is probably an underestimate?*
+<br>
+Hint:
+  * Try looking at the options for ```grep``` - or try piping the output into ```wc```
 
 
-Download the output of multiqc run as follows:
+<details>
+<summary markdown="span"> **Answer**</summary>
+
+<code>
+grep -c my_kmer
+
+# or
+
+grep my_kmer | wc -l
+</code>
+</details>
+
+
+<br>
+<br>
+
+Ok, great. So we've found parts of the genome where our 9-mer is present. Is this an efficient way to build alignments? Why not? What could go wrong?
+
+
+___________________
+
+What would we do next? Perhaps we should build alignments around these matching kmers. 
+
+### NCBI BLAST
+
+The **B**asic **L**ocal **A**lignment **S**earch **T**ool (**BLAST**) is one of the cornerstones of modern biology. Having a search engine with which to query any sequence against a database of all publicly available sequences is tremendous. BLAST has had a profound effect on biology - the original paper describing the tool has more than 100,000 citations!  
+
+First, let's format the ```SalmonReference.fasta``` as a Blast Database...
 
 ```bash
-#From a terminal window running on your local computer
-scp <username@ip.address>:/home/<username>/assembly/multiqc_report.html <path on your computer where you want the file>
+mkdir Tutorial_4
+cd Tutorial_4
+
+
+ /mnt/bin/ncbi-blast-2.16.0+/bin/makeblastdb -in ../SalmonReference.fasta -out SalmonBlast -dbtype nucl
+# This should take a couple of seconds and have generated the following eight files: 
+###   SalmonBlast.ndb  SalmonBlast.nin  SalmonBlast.not  SalmonBlast.ntf
+###   SalmonBlast.nhr  SalmonBlast.njs  SalmonBlast.nsq  SalmonBlast.nto
+
 ```
 
-Open that file up in an internet browser and have a look.
 
-Since we are using simulated data, our data does not have adapters. But taking a look at the signatures of our highly quality reads can help you get a sense of what very high quality data might look like, and additionally,by comparing to your real data, how sequencing technology influences data quality.  
 
-**Discussion Question: our data effectively has had adapters removed from reads and already been trimmed for low quality BPs near the end of reads. what might be the cons of read trimming?**
 
-__________________
+Now try BLAST-ing the sequence we used to build k-mers against the BLAST database you just made. Here's how you can do that:
 
-# Exercise 2
+```bash
 
-Let's pretend that a collaborator just got in contact with you. Going through a shel midden they found some mouldy old bones that look kind of like a Chinook Salmon. They managed to extract DNA from these shells and sequenced them. Your collaborator has sequenced the DNA from this mouldy fish and have sent you the FASTQ files. 
+ /mnt/bin/ncbi-blast-2.16.0+/bin/blastn -db SalmonBlast -query /mnt/data/codebreaks/kmer.fa  -out kmerSearch.out  
+## blastn is the name of the nucleotide BLAST program...
 
-For this exercise, take the ```mouldyFish.fastq.gz``` file and run it throught ```fastqc```, download the output an take a look at it on your browser. What differences are there between these reads and those that you looked at earlier?
+```
 
+Check out the contents of the file called ```kmerSearch.out```. I'd suggest using the ```less``` command.
+
+Did you find a good match?
+
+______________
+
+# Excercise 
+
+### Aligning short reads using BLAST
+
+You may have guessed it, but I took the sequence in the ```kmer.fa``` directly from the reference genome itself. That was just for illustration. What does it look like when we align reads to the reference?
+
+Your task is to BLAST the sequences for the three reads contained in the file called ```three_reads.fq.gz``` located in ```/mnt/data/codebreaks```. 
+
+### Step 1: Convert the FASTQ file to a FASTA file. Remember the structure of these files...
+
+<br>
+<details>
+<summary markdown="span">**If you're struggling with the file conversion, here's a little helper:**</summary>
+
+
+<code>zcat /mnt/data/codebreaks/three_reads.fq.gz | head -n12 | sed -n '1~4s/^@/>/p;2~4p'  > OUTFILE.fasta</code>
+
+Don't worry if the above is baffling to you - it's a pretty complex line. This is just one way of doing it - there are plenty of others. If you came up with a different way, share it with the group!  If you're struggling with it, try taking it apart piece by piece to see what it's doing...
+
+
+</details>
+
+_______________
+
+### Step 2: Query your new FASTA file against the BLAST database
+
+Do you find matches now? Do they look reliable? How long does it take to BLAST one of those files against the Salmon reference genome?
+
+<br>
+
+*Hint*:
+  * Prepending the ```time``` program to your lines is a neat way of getting timings from Unix commands
+
+_______________
+
+### Step 3: How long would it take to map many more short reads?
+
+Would this is a feasible strategy for mapping short reads from a whole-genome-sequencing experiment? 
+
+For many eukaryotes, with genomes that are >10-100 times the size of the simulated genome we're working with here, we would have that many more sequencing reads for comparable coverage as well as a larger reference genome to compare to. To sequence the human genome (approximately 3Gbp) to 30x coverage with 150bp paired end reads, how many reads would you need? How long would it take to map these using BLAST? Can you make a (very) rough estimate with your commands above?
 

@@ -1,5 +1,5 @@
 ---
-title: "Topic 7 - Read Mapping"
+title: "Topic 8 - SNP calling with GATK"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
@@ -7,287 +7,208 @@ layout: post
 ---
 
 ### Accompanying material
-
 [Lecture Slides](/pages/topic_7/topic_7.pdf)
 
+In this tutorial we're going to call SNPs with GATK.
 
-# 1. Indexing Reference Genome
 
-Today we're going to align sequence data to a reference genome using BWA and explore what a BAM file is. As we saw in the genome assembly tutorial, the assembled genomes that we contstructed all have pros and cons. For the sake of this workshop, let's go ahead and use the ground genome. 
+# 1. Set Up Environment
 
-Let's set up a directory structure so the resulting files will be organized and copy the raw data to your home directory.
-
+The first step is again to set up directories to put our incoming files.
 ```bash
 
-# Navigate to your working directory
 cd ~
-
-# Make a place to store your reference genome
-mkdir fasta
-
-# Copy the reference genome to your working directory
-cp -r /mnt/data/assemblies/SalmonReference.fasta fasta
-
-# Copy the fastq files to your working directory
-cp -r /mnt/data/fastq/GWAS_samples/ ./
-
-# Make a new directory for your resulting BAM files
-mkdir bam
+mkdir log
+mkdir gvcf
+mkdir db
+mkdir vcf
+mkdir ref
+mkdir bams
 ```
-We are going to work with the true genome of the species that you explored yesterday because we have limited time. However, can you think of how the choice of assembly would affect the mapping of our data?
-
-Now, let's go ahead and index our reference genome.
+We also have a few programs we're going to use. Since we will be calling them repeatedly, we're going to save their full paths asv ariable. This will only last for the current session so if you log out you'll have to set them up again.
 
 ```bash
-# Index the references for BWA.
-
-bwa index fasta/SalmonReference.fasta
-
-# Takes about 5 seconds
+gatk=/mnt/bin/gatk-4.2.6.0/gatk-package-4.2.6.0-local.jar 
+picard=/mnt/bin/picard.jar
 ```
 
-Great! We can now run BWA and align our short read data.
+There are 4 different samples we will mapping today - 4 individuals [i1, i2, i8, i9] from 1 population [p1]) 
 
-# 2. Map Short Reads Using BWA
+We're going to have to run multiple steps on each sample, so to make this easier, we make a list of all the sample names.
 
-With our newly index reference genome, let's now go about mapping short reads to the genome.
+In case you didn't finish last tutorial, and since we have some extra bams you didn't generate, copy the \*bam files and their index (\*.bai) to your newly generated ~/bams directory 
+(`cp /mnt/data/bams/SalmonSim.p1.3.i[1-2,8-9].400000.sort.bam ~/bams/`).
 
 ```bash
-# We have installed BWA on the VMs, so you don't need to specify the path
-bwa mem \
-  fasta/SalmonReference.fasta \
-  GWAS_samples/SalmonSim.p1.3.i1.400000_R1.fastq.gz \
-  GWAS_samples/SalmonSim.p1.3.i1.400000_R2.fastq.gz \
-  -t 2 \
-  -R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:salmonSim\tLB:sample_1_library' \
-  > bam/SalmonSim.p1.3.i1.sam
+ls bams/ | grep .400000.sort.bam$ | sed s/.400000.sort.bam//g  > samplelist.txt
 
 ```
-*This will take a few moments to run*
+Lets break this down. 
+
+**ls bams** <= List all the files in the _bams_ directory
+
+**\| grep .rg.bam$** <= Only keep the file names ending in _.sort.bam_.
+
+**\| sed s/.rg.bam//g** <= Replace the string .rg.bam_ with "", effectively leaving only the sample name.
+
+**> samplelist.txt** <= Save the result in a file named _samplelist.txt_
 
 
-Lets break this command down since it has several parts:
-**/usr/bin/bwa** <= We're calling the program _bwa_ from the directory _/usr/bin/_. This is the full path to that program so you can call this no matter where you are in the file system.
-
-* **mem** <= This is the mode of bwa we are running. It is an option specific to bwa and not a Unix command.
-
-* **\\** <= Having this at the end of the line tells the shell that the line isn't finished and keeps going. You don't need to use this when typing commands in, but it helps break up really long commands and keeps your code more organized.
-
-* **fasta/SalmonReference.fasta** <= This is the reference genome. We're using a relative path here so you need be in /mnt/<USERNAME> or it won't be able to find this file.
-
-* **GWAS_samples/Salmon.p1.3.i1.400000_R1.fastq.gz** <= This is the forward read (e.g. read 1)  set for the first sample. It's also a relative path and we can see that the file has been gzipped (since it has a .gz ending).
-
-* **GWAS_samples/Salmon.p1.3.i1.400000_R2.fastq.gz** <= This is the reverse read (e.g. read 2)  set for the first sample.
-
-* **-t 2** <= This is telling the program how many threads (i.e. cpus) to use. In this case we're only using two because we're sharing the machine with the other students.
-
-* **-R '@RG\tID:sample_1\tSM:1\tPL:illumina\tPU:salmonSim\tLB:sample_1_library'** <= This is adding read group information to the resulting SAM file. Read group information lets other programs know what the sample name along with other factors. It is necessary for GATK to run later on.
-
-* **> bam/Salmon.p1.3.i1.sam** <= This is directing the output of the program into the file bam/Salmon.p1.3.i1.sam
-
-We now have our reads aligned to the genome in a human readable format (SAM) instead of binary format (bam) which we will use later. Generally we keep our data in BAM format because its more compressed but we can use this opportunity to better understand the format.
+# 2. Mark Duplicates
 
 
-Lets examine the SAM file. It contains all the information on the reads from the fastq file, but also alignment information.
+The first step is to mark duplicate reads using picardtools - this is important because we wouldn't expect to find reads that are exactly identical (the same sequence, with the same start and end positions) unless it resulted from PCR amplification. We don't want to infer genome-wide variation with removing this pseudoreplicated data. If you were using GBS data you wouldn't want to do this step.
 
 ```bash
+#this program is sightly different than we've been working with. They are compiled with java code and contain many modules. 
+#we therefore need to 1) call java 2) point java to the executable 3) tell picard which module to run
+#remember that you can figure out a program's usage by running it without any options except --help (i.e. java -jar $picard MarkDuplicates --help)
 
-# Let's view that SAM file
-less -S bam/SalmonSim.p1.3.i1.sam
-
-# Notice the @PG line that includes the program call that created the SAM file.
-# This is useful for record keeping.
+while read name; do
+  java -jar $picard MarkDuplicates \
+  I=~/bams/$name.400000.sort.bam O=~/bams/$name.sort.dedup.bam \
+  M=log/$name.duplicateinfo.txt
+  samtools index ~/bams/$name.sort.dedup.bam
+done < samplelist.txt
 
 ```
-### *Note*
-The option `-S` when running less chops lines that are longer than the page. This is normally just an aesthetic choice. When looking at SAM/BAM files this is quite necessary!
+
+Now in the bam files duplicate reads are flagged. Take a look in the log directory, which sample has the highest number of duplicate reads?
+
+# 3. Run HaplotypeCaller on each sample
 
 
-
-### Questions:
-1. How are reads ordered in the SAM file?
-2. What does the 6th column represent? What would the string "3M1I3M1D5M" tell you?
-3. What are three possible reasons why mapping quality could be low for a particular read?
-
-____________________________
-
-# 3. Inspect BAM File with SAMTools
-
-At this point we'll introduce a very useful - and incredibly widely used - piece of software called `samtools`. As the name suggests, `samtools` is a program for working with SAM/BAM files.
-
-### *Note*
-`samtools` can produce very useful summaries of alignments - try running `samtools flagstat bam/SalmonSim.p1.3.i1.sam`.
-
-A question that you might ask of an alignment would be, what proportion of my reads mapped to the genome? At this stage, our SAM file contains all the read data, whether reads mapped or not. Using `samtools`, we can easily get a count of the number of reads that successfully mapped to the genome.
+To use GATK, we have to index our reference genome. An index is a way to allow rapid access to a very large file. For example, it can tell the program that the third chromosome starts at bit 100000, so when the program wants to access that chromosome it can jump directly there rather than scan the whole file (we've already done this for our bam files --> .bai) . Some index files are human readable (like .fai files) while others are not.
 
 
 ```bash
+cp /mnt/data/fasta/SalmonReference.fasta ~/ref/ #copy the reference to our local folder
 
-samtools view -c bam/SalmonSim.p1.3.i1.sam
+#two types of references are needed - a sequence dictionary:
+java -jar $picard CreateSequenceDictionary \
+  R=~/fasta/SalmonReference.fasta \
+  O=~/fasta/SalmonReference.dict
 
+#and a .fai file
+samtools faidx ~/fasta/SalmonReference.fasta #column 1 = chromsome number, c2 = length, c3 = cumulative position where contig seq begins (i.e. is not missing)
 ```
-
-Lets break this command down:
-* `samtools`  - the program tat we want to run
-* `view` - the mode we want to run the program in
-* `-c` - this flag indicates that we want a count of reads
-* `bam/SalmonSim.p1.3.i1.sam` - The input file
+Take a look at the ref/SalmonReference.fasta.fai. How many chromosomes are there and how long is each? 
 
 
-This should have printed the total number of mapped reads to screen. There should be no surprises here.  
 
-Now what we're going to do is to remove the `-c` option, which causes `samtools` to send the output straight to STDOUT. This is handy as it means we can pipe it into another process.
+The next step is to use GATK to create a GVCF file for each sample. This file summarizes support for reference or alternate alleles at all positions in the genome *for each individual*. It's an intermediate file we need to use before we create our final, population-level VCF file.
 
-In the following, we'll take our SAM file (human readable) and convert to a BAM file (machine readable) and sort reads by their aligned position.
+This step can take a few minutes so lets first test it with a single sample to make sure it works.
 
 ```bash
-samtools view -bh bam/SalmonSim.p1.3.i1.sam | samtools sort > bam/SalmonSim.p1.3.i1.sort.bam
+#note the approach we'll use for variable assignment in our for loop 
+#` .. ` tells bash to take the output of this command (in this case to use as a values for "name" in the for loop)
+
+for name in `cat ~/samplelist.txt | head -n +1 ` 
+  do 
+   java -Xmx10g -jar $gatk HaplotypeCaller \
+    -R ~/fasta/SalmonReference.fasta \
+    --native-pair-hmm-threads 2 \
+    -I ~/bams/$name.sort.dedup.bam \
+    -ERC GVCF \
+    -O ~/gvcf/$name.sort.dedup.g.vcf
+  done
 ```
+ 
+Check your gvcf file to make sure it has a .idx index file. If the haplotypecaller crashes, it will produce a truncated gvcf file that will eventually crash the genotypegvcf step. Note that if you give genotypegvcf a truncated file without a idx file, it will produce an idx file itself, but it still won't work.
+
+We would run the HaplotypeCaller on the rest of the samples, but that will take too much time, so once you're satisfied that your script works, you can copy the rest of the gvcf files (+ idx files) from `/mnt/data/gvcf` into `~/gvcf`.
 
 
-Lets break this command down:
-* `samtools`  - the program tat we want to run
-* `view` - the mode we want to run the program in
-* `-bh` - this is actually two flags, one that tells samtools to express the data in binary form and the other that tells samtools to include the header
-* `bam/Salmon.p1.3.i1.sam` - The input file
-* `|` - The pipe symbol - you should be familiar with this by now
-* `samtools sort` - another mode of samtools that sorts SAM/BAM files by coordinate
-* `> bam/Salmon.p1.3.i1.sort.bam` - the name you want to give to the output file
+The next step is to import our gvcf files into a genomicsDB file. This is a compressed database representation of all the read data in our samples. It has two important features to remember:
+
+1. Each time you call GenomicsDBImport, you create a database for a single interval. This means that you can parallelize it easier, for example by calling it once per chromosome.
+
+2. The GenomicsDB file contains all the information of your GVCF files, but can't be added to, and can't be back transformed into a gvcf. That means if you get more samples, you can't just add them to your genomicdDB file, you have to go back to the gvcf files.
 
 
-With this command we're using the pipe "|" to pass data directly between commands without saving the intermediates. This makes the command faster since its not saving the intermediate file to hard disk (which is slower). It can be more risky though because if any steps fails you have to start from the beginning.
+We need to create a map file to GATK where our gvcf files are and what sample is in each. Because we use a regular naming scheme for our samples, we can create that using a bash script.
 
-Next we want to take a look at our aligned reads. First we index the file, then we use samtools tview.
+A file like this is what we're looking for:
+```
+sample1 \t gvcf/sample1.g.vcf.gz
+
+sample2 \t gvcf/sample2.g.vcf.gz
+
+sample3 \t gvcf/sample3.g.vcf.gz
+```
+*Note that we added spaces just for visual purposes - GATK is expecting a tab-delimited file*
 
 ```bash
-samtools index bam/SalmonSim.p1.3.i1.sort.bam # build an index of a BAM file
-samtools tview bam/SalmonSim.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta
+for i in `ls gvcf/*g.vcf | sed 's/.sort.dedup.g.vcf//g' | sed 's/gvcf\///g'`
+do
+  echo -e "$i\tgvcf/$i.sort.dedup.g.vcf"
+done > ~/SalmonSim.sample_map
 
-#use ? to open the help menu. Scroll left and right with H and L.
-#Try to find positions where the sample doesn't have the reference allele.
-
+#take a look
+cat ~/SalmonSim.sample_map
 ```
 
-`samtools tview` is similar to IGV but is accessible directly from the command line.
+Lets break down this loop to understand how its working:
 
-You can jump to a specific location in a BAM file with `samtools tview` using the following command:
+**for i in `...`** <= This is going to take the output of the commands in the `...` and loop through it line by line, putting the each line into the variable $i. 
 
-```
+**ls gvcf/"*.g.vcf"** <= List all files in the gvcf directory that end with .g.vcf
 
-samtools tview bam/Salmon.p1.3.i1.sort.bam  --reference fasta/SalmonReference.fasta -p chr_1:80000
+**\| sed s/.sort.dedup.g.vcf//g** <= Remove the suffix to the filename so that its only the sample name remaining.
 
-```
-The additional option ` -p chr_1:80000 ` tells `tview` to jump straight to chr_1 position 80000. Any valid location in the SAM/BAM can be referenced that way.
+**do** <= Starts the part of the script where you put the commands to be repeated.
 
-### *Note*
+**echo -e "$i\t$gvcf/$i.sort.dedup.g.vcf"** <= Print out the variable $i (which is the sample name) and then a second column with the full file name along with the soft path.
 
-Another useful summary that `samtools` can produce very quickly is coverage stats. Try running `samtools depth bam/SalmonSim.p1.3.i1.sort.bam`. Can you think of how you could use the tools you were learning yesterday could be used to take the output from `samtools` to quickly calculate the average depth?
-
+**done > ~/SalmonSim.sample_map** <= Take all the output and put it into a file name _SalmonSim.sample_map_.
 
 
-# Exercise
-
-
-A bash script is a plain text file (i.e. not rich text, nor a word doc) which contains bash commands. You can create the file on your computer and copy it over, or you can edit it directly from the server with one of the installed editors (this is covered in [topic 2, Editing](../Topic_2/#editing). The name of the file is up to you, but bash scripts are given the `.sh` extension by convention.
-
-Here's an example of what you might see inside a bash script:
-
-```
-age=10
-echo "I am $age years young"
-
-```
-(we used a similar example the other day)
-
-The lines of this script do the following:
-
-* `age=10` - this assigns the number 10 to a variable called `age`
-* `echo "I am $age years young"` - this prints a piece of text to the screen containing that age variable
-
-
-
-So a bash script (a.k.a. shell script) is a just set of commands saved as a file. If you named the shell script from above as a file named `myScript.sh`, you could execute the commands by simply running:
+Next we call GenomicsDBImport to actually create the database. This command requires a list of scaffolds so we'll make that too.
 
 ```bash
-sh myScript.sh
+java -Xmx10g -jar $gatk \
+       GenomicsDBImport \
+       --genomicsdb-workspace-path db/Chinook_chr1 \
+       --batch-size 50 \
+       -L  chr_1 \
+       --sample-name-map ~/SalmonSim.sample_map \
+       --reader-threads 3
 ```
 
-_____________________________
+With the genomicsDB created, we're finally ready to actually call variants and output a vcf:
 
-Obviously that example is a little silly, but hopefully you can see how writing shell scripts is a very useful and efficient way of organising your work at the command line.
+```bash
+java -Xmx10g -jar $gatk GenotypeGVCFs \
+   -R fasta/SalmonReference.fasta \
+   -V gendb://db/Chinook_chr1 \
+   -O vcf/Chinook_p1_i12i89_chr1.vcf.gz
+```
 
-If you look in the `/mnt/data/fastq/GWAS_samples/` directory, you'll see that we have data here for 10 samples. It would be very tedious to align each one of these as we have for the single file above.
 
-For this exercise, try writing a bash script to produced a sorted BAM file for each sample as you have done for the single sample above.
+Now we can actually look at the VCF file
 
-When writing a shell script, try to think of the steps that do not need to be repeated over and over again.
+```bash
+less -S vcf/Chinook_p1_i12i89_chr1.vcf.gz
+```
+
+**Tasks:**
+* Try to find an indel. Do you see any sites with more than 1 alternate alleles? 
+* Pick a site and figure out, whats the minor allele frequency? How many samples were genotyped? 
+
+So far we have called variants for a single chromosome. Our simulated genome has two chromosomes, but for many genome assemblies there may be thousands of contigs. Your next challenge is to write a loop to create the genomicsdb file and then VCF for each chromosome (...check out gatk's genomicsdb documentation... is there another way to create a db for multiple chromosomes more efficiently?) 
+
+Once you have two VCF files, one for each chromosome, you can concatenate them together to make a single VCF file. We're going to use ```bcftools``` which is a very fast program for manipulating vcfs as well as bcfs (the binary version of a vcf).
+
+```bash
+
+bcftools concat \
+  vcf/Chinook_p1_i12i89_chr1.vcf.gz \
+  vcf/Chinook_p1_i12i89_chr2.vcf.gz \
+  -O z > vcf/full_genome.vcf.gz
+
+```
+
+You've done it! We have a full VCF. Tomorrow we will filter our VCF file and use it for some analyses.
 
 
-HINTS:
-  * Use variables for directory paths e.g. `bwa=/mnt/bin/bwa-0.7.17/bwa`
-  * Use a loop.
-  {: .spoiler}
-
-MORE HINTS:
-  * for/while loops can receive input from stdin (or a file):
-
-        while read fname;
-	  do echo processing "$fname";
-	done < list_of_things.txt
-  {: .spoiler}
-
-  * You can do pathname manipulation with `basename` and `dirname` (see manual pages):
-
-    ```
-    dirname a/b/c          # prints a/b
-    basename a/b/c.gz      # prints c.gz
-    basename a/b/c.gz .gz  # prints c
-
-    fpath=/path/to/the/file.gz
-    base=$(basename "$fpath")    # assign "file.gz" to variable base
-    echo "$base"                 # prints file.gz
-    ```
-  {: .spoiler}
-
-<details>
-<summary markdown="span">**Answer**
-</summary>
-<code>
-  # First set up variable names
-  # These may be slightly different on the VMs
-  bam=~/bam
-  fastq=~/GWAS_samples
-  bwa=bwa
-  ref_file=~/fasta/SalmonReference.fasta
-
-  #Then get a list of sample names, without suffixes
-  ls $fastq | grep R1.fastq.gz | sed s/_R1.fastq.gz//g > $bam/samplelist.txt
-
-  #Then loop through the samples
-  while read name
-  do
-    $bwa mem \
-    -R "@RG\tID:$name\tSM:$name\tPL:ILLUMINA" \
-    $ref_file \
-    $fastq/${name}_R1.fastq.gz \
-    $fastq/${name}_R2.fastq.gz \
-    -t 1 > $bam/$name.sam;
-
-    samtools view -bh $bam/$name.sam |\
-    samtools sort > $bam/$name.sort.bam;
-    samtools index $bam/$name.sort.bam
-
-    rm $bam/$name.sam # Remove intermediate file
-
-  done < $bam/samplelist.txt
-</code>
-</details>
-
-After your final BAM files are created, and you've checked that they look good, you should remove intermediate files to save space. You can build file removal into your bash scripts as we've done in the worked example, but it is often helpful to only add that in once the script is up and running. It's hard to troubleshoot a failed script if it deletes everything as it goes.
-
-### By topic 7, you should have created cleaned BAM files for all samples.
-
-## Questions for Discussion
-1. Is an alignment with a higher percent of mapped reads always better than one with a lower percent? Why or why not?
-2. I want to reduce the percent of incorrectly mapped reads when using BWA. What setting or settings should I change in BWA?
-3. What are two ways that could be used to evaluate which aligner is best?
