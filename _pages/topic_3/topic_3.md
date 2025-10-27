@@ -1,5 +1,5 @@
 ---
-title: "Topic 4 - Sequence Alignment"
+title: "Topic 3 - Sequence Alignment"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll

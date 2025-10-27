@@ -1,5 +1,5 @@
 ---
-title: "Topic 9 - SNP Filtering and Analysis"
+title: "Topic 8 - SNP Filtering and Analysis"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll

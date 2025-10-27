@@ -1,5 +1,5 @@
 ---
-title: "Topic 7 - Read Mapping"
+title: "Topic 6 - Read Mapping"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll

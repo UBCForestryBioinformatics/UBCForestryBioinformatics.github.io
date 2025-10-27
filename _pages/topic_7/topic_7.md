@@ -1,5 +1,5 @@
 ---
-title: "Topic 8 - SNP calling with GATK"
+title: "Topic 7 - SNP calling with GATK"
 author: Tom Booker
 date: 2024-10-16
 category: Jekyll
