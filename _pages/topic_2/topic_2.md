@@ -63,7 +63,7 @@ cd ../
 
 ```
 
-Great, that's nice and tidy now.
+Great, that's nice and tidy now. Is there something wrong with those shasums though?
 
 
 # Exercise 1
@@ -171,7 +171,7 @@ __________________
 
 # Exercise 2
 
-Let's pretend that a collaborator just got in contact with you. Going through a shel midden they found some mouldy old bones that look kind of like a Chinook Salmon. They managed to extract DNA from these shells and sequenced them. Your collaborator has sequenced the DNA from this mouldy fish and have sent you the FASTQ files. 
+Let's pretend that a collaborator just got in contact with you. Going through a shell midden they found some mouldy old bones that look kind of like a Chinook Salmon. They managed to extract DNA from these shells and sequenced them. Your collaborator has sequenced the DNA from this mouldy fish and have sent you the FASTQ files. 
 
 For this exercise, take the ```mouldyFish.fastq.gz``` file and run it throught ```fastqc```, download the output an take a look at it on your browser. What differences are there between these reads and those that you looked at earlier?
 
