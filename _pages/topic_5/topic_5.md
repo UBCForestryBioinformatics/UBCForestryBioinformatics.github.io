@@ -59,8 +59,9 @@ We have preinstalled STAR on each of the servers, but if you were to do this you
 
 STAR is in the following location on each of the VMs:
 ```sh
-/mnt/software/STAR-2.7.10a_alpha_220818/source/STAR
+/mnt/bin/STAR-2.7.11b/bin/Linux_x86_64/STAR
 ```
+## Feel free to ignore this nextt part if you don't want to configure the PATH variable (ask if you're confused!)
 
 It is a bit annoying to have to type that whole path in all the time, so let's add it to our PATH.
 
@@ -81,7 +82,7 @@ emacs .bashrc  # I like emacs, but use whichever text editor you prefer
 When in your text editor, add the following text and save the file:
 ```bash
 echo "Hello, you are cool!"
-export PATH="/mnt/software/STAR-2.7.10a_alpha_220818/source/:$PATH"
+export PATH="/mnt/bin/STAR-2.7.11b/bin/Linux_x86_64/:$PATH"
 ```
 
 To get your operating system to work with the new instructions you've given it you can refresh your terminal session using the following command:
