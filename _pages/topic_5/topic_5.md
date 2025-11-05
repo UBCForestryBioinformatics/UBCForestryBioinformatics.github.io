@@ -107,7 +107,7 @@ That should access the STAR executable and print a bunch of help text to the scr
 Now that we have STAR up and running, the first thing we'll need to do is build an index for the reference genome so that we can align our reads to it. Building an index is necessary for many bioinformatic operations. It is not dissimilar to the index of a book that tells you where to find certain topics or key wrods. In the case of a genomic index, one builds a record of where you find certain sequences. That makes looking through the genome much more efficient.
 
 
-STAR, like many read aligners, has many modes of operation and building an index is just one of them. To tell STAR
+STAR, like many read aligners, has many modes of operation and building an index is just one of them. To tell STAR tobuild the index for the Chinook reference, use the following command:
 
 ```sh
 
