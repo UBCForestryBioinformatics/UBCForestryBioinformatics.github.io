@@ -11,7 +11,6 @@ layout: post
 
 
 [Lecture Slides](/pages/topic_3/Topic_3.pdf)
-[Lecture Slides](/pages/topic_4/Topic_4.pdf)
 
 
 Programming Resources (in this tutorial or from lecture)
