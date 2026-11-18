@@ -42,7 +42,15 @@ The name is totally arbitrary, it just needs to be something that you'll remembe
 
 You installed FastQC yesterday, but today you're going to install a different program: EviAnn (we discussed it in the lecture)
 
-Take a look at the documentation for EviAnn here: [https://github.com/alekseyzimin/EviAnn_release]{https://github.com/alekseyzimin/EviAnn_release}. On Github, released versions of software get listed on the right-hand side of the page. Check there for the current version. 
+Take a look at the documentation for EviAnn here: [https://github.com/alekseyzimin/EviAnn_release]{https://github.com/alekseyzimin/EviAnn_release}. On Github, released versions of software get listed on the right-hand side of the page. Check there for the current version. Identify the most recent version (when I checked it was 2.0.8), find the link to the source code tar ball and copy the download link.
+
+Download the package at the command line:
+
+```
+wget <link you copied>
+```
+
+Hopefully that downloaded nicely. 
 
 ```
 ## I lifted this straight from the EviAnn README - you'll need to fix the version numbers to get it to work with the current version of the software
