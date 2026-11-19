@@ -218,24 +218,20 @@ Obviously that example is a little silly, but hopefully you can see how writing 
 
 If you look in the `/mnt/data/fastq/GWAS_samples/` directory, you'll see that we have data here for 10 samples. It would be very tedious to align each one of these as we have for the single file above.
 
-For this exercise, try writing a bash script to produced a sorted BAM file for each sample as you have done for the single sample above.
+**For this exercise, try writing a bash script to produced a sorted BAM file for each sample as you have done for the single sample above.**
 
 When writing a shell script, try to think of the steps that do not need to be repeated over and over again.
 
 
-HINTS:
+
+#### Hints:
+
   * Use variables for directory paths e.g. `bwa=/mnt/bin/bwa-0.7.17/bwa`
   * Use a loop.
-  {: .spoiler}
-
-MORE HINTS:
   * for/while loops can receive input from stdin (or a file):
-
         while read fname;
-	  do echo processing "$fname";
-	done < list_of_things.txt
-  {: .spoiler}
-
+	      do echo processing "$fname";
+    	done < list_of_things.txt
   * You can do pathname manipulation with `basename` and `dirname` (see manual pages):
 
     ```
@@ -246,12 +242,12 @@ MORE HINTS:
     fpath=/path/to/the/file.gz
     base=$(basename "$fpath")    # assign "file.gz" to variable base
     echo "$base"                 # prints file.gz
-    ```
-  {: .spoiler}
+```
 
-<details>
-<summary markdown="span">**Answer**
-</summary>
+### Don't look past here if you want to write it on your own!
+
+
+Here is a template loop script that will run on each of the files in your fastq directory:
 
 ```
   # First set up variable names
@@ -283,7 +279,6 @@ MORE HINTS:
   done < $bam/samplelist.txt
 ```
 
-</details>
 
 After your final BAM files are created, and you've checked that they look good, you should remove intermediate files to save space. You can build file removal into your bash scripts as we've done in the worked example, but it is often helpful to only add that in once the script is up and running. It's hard to troubleshoot a failed script if it deletes everything as it goes.
 
