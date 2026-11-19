@@ -281,8 +281,8 @@ MORE HINTS:
     rm $bam/$name.sam # Remove intermediate file
 
   done < $bam/samplelist.txt
-
 ```
+
 </details>
 
 After your final BAM files are created, and you've checked that they look good, you should remove intermediate files to save space. You can build file removal into your bash scripts as we've done in the worked example, but it is often helpful to only add that in once the script is up and running. It's hard to troubleshoot a failed script if it deletes everything as it goes.
